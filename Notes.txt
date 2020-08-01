@@ -1,0 +1,93 @@
+
+Organization of Light Field Ray Trace Projector Code
+
+    LFRayTraceVoxParams.py
+        Input:
+            Resolution: voxPitch
+            # of uLenses
+
+    LFRayTraceVoxSpace.py
+
+    LFRayTraceVoxGenerate.py
+        Generates a mapping of the rays passing through all the voxels in the working space to the sensor plane.
+
+    LFRayTraceVoxProjection.py
+
+    siddon2
+
+    camRayEntrance.py
+    camRayEntrance.txt
+
+    samples.py
+
+    samples/ directory
+
+
+
+Test Samples
+    cylindrical objects (bundles) that have all a cylinder diameter of 6 voxPitch and a length of 30 µLensPitch.
+    The first bundle (bundle1_0_0.txt) is oriented parallel to the Y-axis, hence perpendicular to the optical axis.
+    The second bundle (bundle2_45_45.txt) is first rotated by 45 degree around the X-axis and then rotated out of the Y-Z plane by 45 degree.
+    The third bundle (bundle3_0_90.txt) is parallel to the X-axis.
+    The bundles are all rasterized with a voxelPitch of 0.865µm.
+
+-- Orientation of Axes, Coordinated
+	I've choosen to consistently display results using an origin (0,0) at lower left.
+	When an array is plotted as an image in matplotlib, this can be specified by
+		plot.imshow(array, origin='lower')
+	For tiff files, the array can be flipped vertically like this:
+		tifffile.imsave(filename, np.flipud(array))
+
+-- Display LF Image  with gamma <> 1
+    You can specify gamma when matplotlib images are plotted to show low vales.
+
+-- Directories for data:
+    Data is written to separate directories, depending on the ulenses and voxPitch parameters
+    with this pattern:  lfimages/[uLenses]/[voxPitch] (e.g. lfimages/24/0_578)
+
+    LFRTVoxel files are named lfvox_ (e.g. lfvox_24_0_578.npy)
+
+	Light field images (_.plm.tiff) and are named like this: [name]_[parms].plm.tiff
+
+    Perspective images... [name]_[parms].plm.psv.tiff
+
+
+-- Simple Sample Objects For Testing (in samples.py)
+    Lines in the x, y and z directions, a diagonal line, and a block,
+	all with the value = 1 in the occupied voxels.
+	These object can be displaced within the object space by changing
+		offsets = [0, 20, 20]
+	in the runProjection function.
+
+
+
+Perspective Images
+	Generates (uLenses x uLenses) array of (16 x 16) perspective images
+	helpful for validation, seeing geometry of sample.
+
+
+
+Next steps
+
+
+Compute largest space, highest resolution map
+
+	110 uLenses
+
+
+Testing and Validation of results, geometry, etc.
+If many occupied voxels, accum intensity goes nuts...
+
+Image Data Management
+
+    Add Metadata in tiff file
+
+ImageNavigator
+
+    Handle .plm files
+
+    Pairs of lenslet and perspective images. Same name_parms
+        name_parms.plm.tiff
+        name_parms.plm.psv.tiff
+
+github:  ExplorativeEngineering !11WestMyrtle
