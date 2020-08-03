@@ -1,35 +1,45 @@
 
 Organization of Light Field Ray Trace Projector Code
+----------------------------------------------------
 
     LFRayTraceVoxParams.py
-        Input:
-            Resolution: voxPitch
+        Set the Input parameters for both generating (run LFRayTraceVoxGenerate) and
+        projecting (run LFRayTraceVoxProjection):
+            Resolution, voxPitch
             # of uLenses
 
     LFRayTraceVoxSpace.py
+        Calculates coordinates, transforms
 
     LFRayTraceVoxGenerate.py
         Generates a mapping of the rays passing through all the voxels in the working space to the sensor plane.
 
     LFRayTraceVoxProjection.py
+        Creates the light field image by projecting all rays from the sample voxels.
 
-    siddon2
+    siddon2.py
+        The Siddon algorithm.
 
     camRayEntrance.py
-    camRayEntrance.txt
+        Reads camRayEntrance.txt to create camPix and Entrance coord arrays.  Calcs Exit coord array
 
     samples.py
+        Creates test samples
+        -- Simple Sample Objects For Testing (in samples.py)
+            Lines in the x, y and z directions, a diagonal line, and a block,
+            all with the value = 1 in the occupied voxels.
+            These object can be displaced within the object space by changing
+                offsets = [0, 20, 20]
+            in the runProjection function.
 
     samples/ directory
-
-
-
-Test Samples
-    cylindrical objects (bundles) that have all a cylinder diameter of 6 voxPitch and a length of 30 µLensPitch.
-    The first bundle (bundle1_0_0.txt) is oriented parallel to the Y-axis, hence perpendicular to the optical axis.
-    The second bundle (bundle2_45_45.txt) is first rotated by 45 degree around the X-axis and then rotated out of the Y-Z plane by 45 degree.
-    The third bundle (bundle3_0_90.txt) is parallel to the X-axis.
-    The bundles are all rasterized with a voxelPitch of 0.865µm.
+        contains sample objects in .txt formats (from Mathematica)
+        Test Samples include:
+        cylindrical objects (bundles) that have all a cylinder diameter of 6 voxPitch and a length of 30 µLensPitch.
+        The first bundle (bundle1_0_0.txt) is oriented parallel to the Y-axis, hence perpendicular to the optical axis.
+        The second bundle (bundle2_45_45.txt) is first rotated by 45 degree around the X-axis and then rotated out of the Y-Z plane by 45 degree.
+        The third bundle (bundle3_0_90.txt) is parallel to the X-axis.
+        The bundles are all rasterized with a voxelPitch of 0.865µm.
 
 -- Orientation of Axes, Coordinated
 	I've choosen to consistently display results using an origin (0,0) at lower left.
@@ -41,25 +51,12 @@ Test Samples
 -- Display LF Image  with gamma <> 1
     You can specify gamma when matplotlib images are plotted to show low vales.
 
--- Directories for data:
+-- Directories for data output:
     Data is written to separate directories, depending on the ulenses and voxPitch parameters
     with this pattern:  lfimages/[uLenses]/[voxPitch] (e.g. lfimages/24/0_578)
-
-    LFRTVoxel files are named lfvox_ (e.g. lfvox_24_0_578.npy)
-
-	Light field images (_.plm.tiff) and are named like this: [name]_[parms].plm.tiff
-
-    Perspective images... [name]_[parms].plm.psv.tiff
-
-
--- Simple Sample Objects For Testing (in samples.py)
-    Lines in the x, y and z directions, a diagonal line, and a block,
-	all with the value = 1 in the occupied voxels.
-	These object can be displaced within the object space by changing
-		offsets = [0, 20, 20]
-	in the runProjection function.
-
-
+        - LFRTVoxel files are named lfvox_ (e.g. lfvox_24_0_578.npy)
+	    - Light field images (_.plm.tiff) and are named like this: [name]_[parms].plm.tiff
+        - Perspective images... [name]_[parms].plm.psv.tiff
 
 Perspective Images
 	Generates (uLenses x uLenses) array of (16 x 16) perspective images
@@ -68,6 +65,7 @@ Perspective Images
 
 
 Next steps
+--------------
 
 
 Compute largest space, highest resolution map

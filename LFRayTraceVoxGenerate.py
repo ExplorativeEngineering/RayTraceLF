@@ -174,7 +174,6 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
     return voxel
 
 def generateLightFieldVoxelRaySpace(ulenses_, uLensPitch_, voxPitch_, entrance_, exits_, workingBox_):
-
     timer.startTime()
     # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
     midpointsList, lengthsList = genMidPtsLengthswithSiddon(entrance_, exits_, workingBox_, voxPitch_)
@@ -213,7 +212,9 @@ def loadLightFieldVoxelRaySpace(filename):
     voxel = np.load(filename+".npy" , allow_pickle=True)
     return voxel
 
+# DIAGNOSTIC ===============================
 def showRaysInVoxels(voxel):
+    # diagnostic: shows number of rays in each voxel
     for x in range(voxel.shape[0]):
         for y in range(voxel.shape[1]):
             for z in range(voxel.shape[2]):

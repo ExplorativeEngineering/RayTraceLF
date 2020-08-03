@@ -5,10 +5,13 @@ in other words voxCtr is the center of object space."""
 
 #  position in object space given in µm ranges from {0, 0, 0} at one corner
 #  to 2 * voxCtr at the diagonal corner
+import numpy as np
+import matplotlib.pyplot as plt
 import LFRayTraceVoxParams
 from LFRayTraceVoxSpace import getVoxelDims, entranceExitX, entranceExitYZ
 
 """
+July 30 or so...
 I seem to remember that the Siddon code could only deal with positive values as coordinates. 
 That’s why I put the origin in one corner of the working space and then rastered it using 
 the different voxPitch values. That’s why voxCtr is slightly different for different voxPitch values. 
@@ -89,12 +92,41 @@ def camRayEntrance(voxCtr):
 
 if __name__ == '__main__':
     # test
-    voxPitch = (26/15) / 5
+    voxPitch = (26/15)
     print("voxPitch:", voxPitch)
     voxCtr, voxNrX, voxNrYZ = getVoxelDims(entranceExitX, entranceExitYZ, voxPitch)
     print("    voxCtr, voxNrX, voxNrYZ: ", LFRayTraceVoxParams.formatList(voxCtr), voxNrX, voxNrYZ, "  extent(", entranceExitX,
           entranceExitYZ, "microns )")
     camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
+    # Diagnostic...
+    # Plot Entrance
+    ent = np.array(entrance)
+    y = ent[:, [1]]
+    z = ent[:, [2]]
+    #colors = (0, 0, 0)
+    area = np.pi * 3
+
+    plt.figure("Entrance Coordinates")
+    plt.scatter(y, z, s=area, alpha=0.5)
+    # plt.scatter(y, z, s=area, c=colors, alpha=0.5)
+    plt.title('entrance')
+    plt.xlabel('y')
+    plt.ylabel('z')
+    plt.show()
+    # Plot camPix
+
+    ent = np.array(camPix)
+    y = ent[:, [0]]
+    z = ent[:, [1]]
+    area = np.pi * 3
+
+    plt.figure("CamPix Coordinates")
+    plt.scatter(y, z, s=area, alpha=0.5)
+    # plt.scatter(y, z, s=area, c=colors, alpha=0.5)
+    plt.title('camPix')
+    plt.xlabel('y')
+    plt.ylabel('z')
+    plt.show()
     print()
 
 """
