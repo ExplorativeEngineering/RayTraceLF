@@ -1,5 +1,4 @@
 import multiprocessing
-import multiprocessing
 import struct
 from math import ceil
 
@@ -112,6 +111,7 @@ def genLightFieldImageMultiProcess(ulenses, camPix, anglesList, sampleArray):
         for n in range(len(chunk)):
             value = sampleArray[chunk[n][0], chunk[n][1], chunk[n][2]]
             rays = voxel[chunk[n][0], chunk[n][1], chunk[n][2]]
+            print()
             if rays is None:
                 pass
                 # print("rays = None in voxel: ", [nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n]])
@@ -239,7 +239,7 @@ def projectArray(array, name, offsets, workingDimX, workingDimYZ, ulenses, camPi
         plt.figure("LFImage:" + name)
         glfImage = np.power(lfImage, gamma)
         plt.imshow(glfImage, origin='lower', cmap=plt.cm.gray)  # , vmin=0, vmax=maxIntensity)  # unit = 65535/maxIntensity
-        plt.interactive(False)
+        #plt.interactive(False)
         #plt.show(block=True)
         plt.show()
     # save lfImage

@@ -3,10 +3,11 @@ import math
 import struct
 import matplotlib.pyplot as plt
 import numpy as np
-from past.builtins import xrange
+
 
 import LFRayTraceVoxParams
 from LFRayTraceVoxSpace import entranceExitX, entranceExitYZ, getVoxelDims, getWorkingDims
+# TODO
 from camRayEntrance import camRayEntrance
 from utils import timer, sizeOf
 
@@ -43,7 +44,8 @@ def genMidPtsLengthswithSiddon(entrance_, exit_, voxBox_, voxPitch_):
     print("        longestMidPts: ", longestMidPts)
     print("        num_midpts   : ", num_midpts)
     # 164 camPixX, camPixY,
-    return np.array(midpointsList), np.array(lengthsList)
+    # return np.array(midpointsList), np.array(lengthsList)
+    return midpointsList, lengthsList
 
 
 def showMidPointsAndLengths(camPix, midpointsList, lengthsList):
@@ -74,7 +76,7 @@ def showMidPointsAndLengths(camPix, midpointsList, lengthsList):
     plt.show()
 
 
-def generateYZOffsets(midpointsList_, ulenses, uLensPitch_, voxPitch_):
+def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
     # Generate offsets in voxels
     voxPitchOver1 = 1 / voxPitch_
     # Xmin = 10000
@@ -91,9 +93,9 @@ def generateYZOffsets(midpointsList_, ulenses, uLensPitch_, voxPitch_):
         for m in range(len(midpointsList_[n])):
            midsZ[n].append(midpointsList_[n][m][2])
     # Generate Offset Z List =================
-    midsOffZ = [[] for i in range(ulenses)]
-    for l in range(ulenses):
-        offsetZ = (l - ulenses/2) * uLensPitch_
+    midsOffZ = [[] for i in range(ulenses_)]
+    for l in range(ulenses_):
+        offsetZ = (l - ulenses_ / 2) * uLensPitch_
         midsOffZ[l] = copy.deepcopy(midsZ)
         for n in range(len(midsOffZ[l])):
             for m in range(len(midsOffZ[l][n])):
@@ -108,9 +110,9 @@ def generateYZOffsets(midpointsList_, ulenses, uLensPitch_, voxPitch_):
         for m in range(len(midpointsList_[n])):
            midsY[n].append(midpointsList_[n][m][1])
     # Generate Offset Y List =================
-    midsOffY = [[] for i in range(ulenses)]
-    for l in range(ulenses):
-        offsetY = (l - ulenses/2) * uLensPitch_
+    midsOffY = [[] for i in range(ulenses_)]
+    for l in range(ulenses_):
+        offsetY = (l - ulenses_ / 2) * uLensPitch_
         midsOffY[l] = copy.deepcopy(midsY)
         for n in range(len(midsOffY[l])):
             for m in range(len(midsOffY[l][n])):
@@ -155,7 +157,7 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
                         x, y, z = int(midsX[nRay][midpt] - workingBox[0][0]), \
                                   int(midsOffY[nY][nRay][midpt] - workingBox[1][0]), \
                                   int(midsOffZ[nZ][nRay][midpt] - workingBox[2][0])
-                        # print("nZ, nY, nRay, x, y, z", nZ, nY, nRay, x, y, z)
+                        print("nZ, nY, nRay, x, y, z", nZ, nY, nRay, x, y, z)
                         if 0 <= x < wbx and 0 <= y < wbyz and  0 <= z < wbyz:
                             packedRay = struct.pack('BBBH', nRay, nZ, nY,
                                                     int(lengthsList[nRay][midpt] * LFRayTraceVoxParams.length_div))
@@ -167,7 +169,7 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
     #number_of_rays = 0
     numProc = LFRayTraceVoxParams.getNumProcs()
     l = list(range(ulenses))
-    chunks_of_k = [l[x: x + numProc] for x in xrange(0, len(l), numProc)]
+    chunks_of_k = [l[x: x + numProc] for x in range(0, len(l), numProc)]
     for chunk in chunks_of_k:
         process_for_k(chunk)
     #print("number_of_rays:", number_of_rays)
@@ -191,6 +193,7 @@ def generateLightFieldVoxelRaySpace(ulenses_, uLensPitch_, voxPitch_, entrance_,
     print("    midsX   :", len(midsX))
     print("    midsOffY:", len(midsOffY))
     print("    midsOffZ:", len(midsOffZ))
+
     # print("lengthsList,angleList: ", len(lengthsList), len(anglesList))
 
     timer.startTime()

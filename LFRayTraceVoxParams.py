@@ -1,6 +1,17 @@
 import multiprocessing
 import math
 from pathlib import Path
+# ==== INPUTS ==================================================
+# voxPitch is the side length in microns of a cubic voxel in object space;
+# and of a square cell of the entrance and exit face, it determines digital voxel resolution
+# Make uLensPitch/voxPitch an odd integer
+# possible values for voxPitch: 3, 1, 1/3, 1/5 of 26/15 (uLensPitch)
+#voxPitches = [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
+voxPitches = [(26 / 15)]
+# ulenseses = [8, 16, 32, 64, 115]
+# ulenseses = [9, 25, 49, 81, 115]
+ulenseses = [3, 4, 5]
+
 
 # Optical System Parameters ==============================================================
 magnObj = 60  # magnification of objective lens
@@ -21,19 +32,9 @@ print("uLensPitch:", uLensPitch)
 # TODO For different optical configurations, we need a camRayEntrance array for each.
 # opticalConfig:  60x, 1.2 NA  and  20x ? NA
 
-# voxPitch ==========================================
-# voxPitch is the side length in microns of a cubic voxel in object space;
-# and of a square cell of the entrance and exit face, it determines digital voxel resolution
-# Make uLensPitch/voxPitch an odd integer
-# possible values for voxPitch: 3, 1, 1/3, 1/5 of 26/15 (uLensPitch)
-#voxPitches = [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
-voxPitches = [(26 / 15)]
-# ulenseses = [8, 16, 32, 64, 115]
-# ulenseses = [9, 25, 49, 81, 115]
-ulenseses = [1]
 
 # ================================
-# Data Types...
+# Data Types, Ranges (for encoding)
 # TODO what is maximum accumulated intensity?
 # depends on output image depth
 intensity_multiplier = 1000
