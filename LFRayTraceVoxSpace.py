@@ -8,6 +8,9 @@ displace = [0, 0, 0]
 entranceExitX = 250  # microns
 entranceExitYZ = 700  # microns
 
+# workingSpaceX = 100  # 100 microns
+workingSpaceX = 20  # TEST
+
 def getVoxelDims(extentOfSpaceX, extentOfSpaceYZ, voxPitch):
     # Voxel dimensions, extent...
     # voxPitch is the side length in micron of a cubic voxel in object space
@@ -42,10 +45,10 @@ def getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace):
     containing the simulated object away from the center of object space. A displacement
     along the X-axis will be important for simulating objects that are not in the nominal focal plane. """
     displace = [0 * voxPitch, 0 * voxPitch, 0 * voxPitch]
-    ''' voxBoxNrs specify the corner positions of the displaced bounding box in terms of indices (not physical length)
-      voxBoxNrs = {{Xmin, Xmax}, {Ymin, Ymax}, {Zmin, Zmax}}
-      voxBoxNrs = Transpose[{voxCtr + displace - sample[[2]] / 2, voxCtr + displace + sample[[2]] / 2}]
-               / voxPitch // Round;'''
+    #  voxBoxNrs specify the corner positions of the displaced bounding box in terms of indices (not physical length)
+    #  voxBoxNrs = {{Xmin, Xmax}, {Ymin, Ymax}, {Zmin, Zmax}}
+    #  voxBoxNrs = Transpose[{voxCtr + displace - sample[[2]] / 2,
+    #       voxCtr + displace + sample[[2]] / 2}]  / voxPitch // Round;
     voxBoxX1 = int(round((voxCtr[0] + displace[0] - workingBoxDim[0] / 2) / voxPitch))
     voxBoxX2 = int(round((voxCtr[0] + displace[0] + workingBoxDim[0] / 2) / voxPitch))
     voxBoxY1 = int(round((voxCtr[1] + displace[1] - workingBoxDim[1] / 2) / voxPitch))
@@ -56,7 +59,7 @@ def getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace):
     return voxBox
 
 def getWorkingDims(voxCtr, ulenses, voxPitch):
-    workingSpaceX = 100  # 100 microns
+
     workingSpaceYZ = ulenses * voxPitch  # microns; YZ size a function of the # of uLens
     workingBoxDim = [workingSpaceX, workingSpaceYZ, workingSpaceYZ]
     workingBox = getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace)
@@ -70,12 +73,11 @@ def getWorkingDims(voxCtr, ulenses, voxPitch):
 # test...
 if __name__ == "__main__":
     # test
-    voxPitch = (26 / 15) / 5
+    voxPitch = (26 / 15)
     ulenses = 3
     print("voxPitch, ulenses:", voxPitch, ulenses)
     voxCtr, voxNrX, voxNrYZ = getVoxelDims(entranceExitX, entranceExitYZ, voxPitch)
     print("    voxCtr, voxNrX, voxNrY:", formatList(voxCtr), voxNrX, voxNrYZ)
-    workingSpaceX = 100  # 100 microns
     workingSpaceYZ = ulenses * voxPitch  # microns; YZ size a function of the # of uLens
     workingBoxDim = [workingSpaceX, workingSpaceYZ, workingSpaceYZ]
     workingBox = getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace)
