@@ -2,6 +2,8 @@
 Organization of Light Field Ray Trace Projector Code
 ----------------------------------------------------
 
+RO
+
     LFRayTraceVoxParams.py
         Set the Input parameters for both generating (run LFRayTraceVoxGenerate) and
         projecting (run LFRayTraceVoxProjection):
