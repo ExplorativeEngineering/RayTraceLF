@@ -80,7 +80,7 @@ def loadGUV1():
     return np.array(array)
 
 
-array = loadGUV1()
+# array = loadGUV1()
 
 """ Test Samples
 Create a 1 voxel sample... at 7,7,7 in 15x15x15 3d array 
@@ -88,18 +88,18 @@ shape = [15,15,15]
 sampleArray = np.zeros(shape)
 sampleArray[8][8][8] = 1.
 """
-'''
+"""
 array = [[[0, 0, 0], [0, 0, 0], [0, 0, 0]],
          [[0, 0, 0], [0, 1, 0], [0, 0, 0]],
          [[0, 0, 0], [0, 0, 0], [0, 0, 0]]]
-'''
-'''
+"""
+
 array = [
     [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
     [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]],
     [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]],
     [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]]
-'''
+
 sampleArray = np.array(array)
 
 """
@@ -109,8 +109,9 @@ plt.show()
 """
 
 # Bounding Box of Sample, displaced ======================================================================
-boundingBoxDim = [25.95, 25.95, 25.95]
+# boundingBoxDim = [25.95, 25.95, 25.95]
 # boundingBoxDim = [5.1899999999999995, 5.1899999999999995, 5.1899999999999995]
+boundingBoxDim = [10,10,10]
 print("BoundingBoxDim: ", boundingBoxDim)
 
 ''' displace = {0 voxPitch, 0 voxPitch, 0 voxPitch}; #displacement from voxCtr
@@ -138,7 +139,7 @@ print("BoundingBox displaced = ", voxBox)
 # >>> BoundingBox displaces =  [[65, 80], [195, 210], [195, 210]]
 
 '''Load camRayEntrance ======================================================================='''
-camPix, entrance, exits = camRayEntrance()  # 164 (x,y), (x, y, z) (x, y, z)
+camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
 # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
 
 ''' Rays - Generate midpoints and lengths for the 164 rays... ===================================
@@ -242,7 +243,7 @@ images = []
 start = time.time()
 maxIntensity = 0
 
-ulenses = 16
+ulenses = 7
 bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
 for k in range(-ulenses // 2, ulenses // 2):
     for j in range(-ulenses // 2, ulenses // 2):

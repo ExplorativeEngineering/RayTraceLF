@@ -1,15 +1,9 @@
 # =====================================
 # Spatial coordinates and dimensions...
-
+import LFRayTraceVoxParams
 from LFRayTraceVoxParams import formatList
 
-displace = [0, 0, 0]
-# Entrance, Exit planes are 700 x 700, 250 apart (um)
-entranceExitX = 250  # microns
-entranceExitYZ = 700  # microns
 
-# workingSpaceX = 100  # 100 microns
-workingSpaceX = 20  # TEST
 
 def getVoxelDims(extentOfSpaceX, extentOfSpaceYZ, voxPitch):
     # Voxel dimensions, extent...
@@ -59,10 +53,10 @@ def getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace):
     return voxBox
 
 def getWorkingDims(voxCtr, ulenses, voxPitch):
-
-    workingSpaceYZ = ulenses * voxPitch  # microns; YZ size a function of the # of uLens
-    workingBoxDim = [workingSpaceX, workingSpaceYZ, workingSpaceYZ]
-    workingBox = getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace)
+    # TODO not voxPitch, lenPitch
+    workingSpaceYZ = ulenses * voxPitch # microns; YZ size a function of the # of uLens
+    workingBoxDim = [LFRayTraceVoxParams.workingSpaceX, workingSpaceYZ, workingSpaceYZ]
+    workingBox = getWorkingBox(voxCtr, workingBoxDim, voxPitch, LFRayTraceVoxParams.displace)
     print("    workingBox:", workingBox)
     print("               ",
                     (workingBox[0][1] - workingBox[0][0]),
@@ -76,13 +70,14 @@ if __name__ == "__main__":
     voxPitch = (26 / 15)
     ulenses = 3
     print("voxPitch, ulenses:", voxPitch, ulenses)
-    voxCtr, voxNrX, voxNrYZ = getVoxelDims(entranceExitX, entranceExitYZ, voxPitch)
-    print("    voxCtr, voxNrX, voxNrY:", formatList(voxCtr), voxNrX, voxNrYZ)
+    voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, voxPitch)
+    print("    voxelDims:", LFRayTraceVoxParams.formatList(voxCtr), " (",
+          LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, "microns )  : ", voxNrX, voxNrYZ, voxNrYZ)
+    #print("    voxCtr, voxNrX, voxNrY:", formatList(voxCtr), voxNrX, voxNrYZ)
     workingSpaceYZ = ulenses * voxPitch  # microns; YZ size a function of the # of uLens
-    workingBoxDim = [workingSpaceX, workingSpaceYZ, workingSpaceYZ]
-    workingBox = getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace)
+    workingBoxDim = [LFRayTraceVoxParams.workingSpaceX, workingSpaceYZ, workingSpaceYZ]
+    workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
     print("    workingBox:", workingBox)
-
 
     """
     OLD...

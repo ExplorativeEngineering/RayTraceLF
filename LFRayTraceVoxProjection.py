@@ -9,7 +9,7 @@ import tifffile
 import LFRayTraceVoxParams
 import samples
 from LFRayTraceVoxParams import genRayAngles, voxPitches
-from LFRayTraceVoxSpace import getVoxelDims, entranceExitX, entranceExitYZ, getWorkingDims
+from LFRayTraceVoxSpace import getVoxelDims, getWorkingDims
 
 from camRayEntrance import camRayEntrance
 from utils import timer
@@ -28,15 +28,18 @@ def loadLightFieldVoxelRaySpace(filename):
 # ==================================================================================
 # Generate LightField Projections
 # ==================================================================================
-def showRaysInVoxels():
+# DIAGNOSTIC ===============================
+def showRaysInVoxels(voxel):
+    # diagnostic: shows number of rays in each voxel
+    print("voxel.shape:", voxel.shape)
     for x in range(voxel.shape[0]):
         for y in range(voxel.shape[1]):
             for z in range(voxel.shape[2]):
                 rays = voxel[x][y][z]
                 if rays is None:
-                    print( x,y,z, " No rays in voxel")
+                    print( x,y,z, " : -----")
                 else:
-                    print(x, y, z, len(rays))
+                    print(x, y, z, " : ", len(rays))
                     for ray in range(len(rays)):
                         if rays[ray] is not None:
                             unpackedRay = struct.unpack('BBBH', rays[ray])
@@ -45,7 +48,6 @@ def showRaysInVoxels():
                             nY = unpackedRay[2]
                             length = unpackedRay[3]
                         #    print(x,y,z,nRay, nZ, nY, length)
-
 
 # @jit(nopython=True)
 # @jit
@@ -214,6 +216,8 @@ def projectSample(name, offsets, workingDimX, workingDimYZ, ulenses, camPix, ang
     if display_plot:
         plt.figure("LFImage:" + name)
         glfImage = np.power(lfImage, gamma)
+        # plt.interactive(False)
+        # plt.show(block=false)
         plt.imshow(glfImage, origin='lower', cmap=plt.cm.gray)  # , vmin=0, vmax=maxIntensity)  # unit = 65535/maxIntensity
         plt.interactive(False)
         #plt.show(block=True)
@@ -300,7 +304,7 @@ def runProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
 
     # projectArray(samples.sample_block(3), "Block3 X -300", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     projectArray(samples.sample_1by1(), "1x1", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    # projectArray(samples.sample_2by2(), "1x1", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    projectArray(samples.sample_2by2(), "2x2", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     # #
     # offsets = [0, 0, 0]
     # projectSample('GUV1trimmed',         offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
@@ -341,19 +345,20 @@ def main():
 voxel = None
 
 if __name__ == "__main__":
-
-
+    import sys
+    sys.stdout = open('outputProj.txt', 'wt')
     for ulenses in LFRayTraceVoxParams.ulenseses:
         for voxPitch in LFRayTraceVoxParams.voxPitches:
 
-            voxCtr, voxNrX, voxNrYZ = getVoxelDims(entranceExitX, entranceExitYZ, voxPitch)
-            print("    voxelDims:", LFRayTraceVoxParams.formatList(voxCtr), voxNrX, voxNrYZ, "(", entranceExitX,
-                  entranceExitYZ, "microns)")
+            voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX,
+                                                   LFRayTraceVoxParams.entranceExitYZ, voxPitch)
+            print("    voxelDims:", LFRayTraceVoxParams.formatList(voxCtr), voxNrX, voxNrYZ,
+                  "(", LFRayTraceVoxParams.entranceExitX,
+                  LFRayTraceVoxParams.entranceExitYZ, "microns)")
             camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
             # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
             anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits)
             print("Generating lfvox w/ ulenses, voxPitch: ", ulenses, voxPitch)
-            parameters, path, lfvox_filename = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
             workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
             del entrance
             del exits
@@ -361,7 +366,7 @@ if __name__ == "__main__":
             print("Loading "+ path + "lfvox_" + parameters)
             voxel = loadLightFieldVoxelRaySpace(path + "lfvox_" + parameters)
 
-            showRaysInVoxels()
+            showRaysInVoxels(voxel)
 
             print("Running projections...(image size: ", ulenses * 16, ")")
             workingDimX = workingBox[0][1] - workingBox[0][0]

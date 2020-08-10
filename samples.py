@@ -2,43 +2,43 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def loadSphere2():
-    # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
-    # With GUV1, 15x15x15 ranges from 15 - 37
-    with open('samples/SolidSphere2Trimmed.txt', 'r') as f: text = f.read()
-    for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
-    array = eval(text)
-    boundingBoxDim = [5.1899999999999995, 5.1899999999999995, 5.1899999999999995]
-    return np.array(array)
-
-def loadSphere1():
-    # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
-    # With GUV1, 15x15x15 ranges from 15 - 37
-    with open('samples/SolidSphere1Trimmed.txt', 'r') as f: text = f.read()
-    for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
-    array = eval(text)
-    boundingBoxDim = [8.65, 8.65, 8.65]
-    return np.array(array)
-
-def loadGUV1():
-    # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
-    # With GUV1, 15x15x15 ranges from 15 - 37
-    with open('samples/GUV1trimmed.txt', 'r') as f: text = f.read()
-    for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
-    array = eval(text)
-    boundingBoxDim = [25.95, 25.95, 25.95]
-    return np.array(array), boundingBoxDim
-
-def loadGUV2():
-    # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
-    # With GUV1, 15x15x15 ranges from 15 - 37
-    #{"GUV center=", {32.005, 32.005, 32.005}, ", GUV radius=", 30.275, ", membrane thick=", 1.73}
-    #{64.01, 64.01, 64.01}
-    with open('samples/GUV2BTrimmed.txt', 'r') as f: text = f.read()
-    for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
-    array = eval(text)
-    boundingBoxDim = [64.01, 64.01, 64.01]
-    return np.array(array), boundingBoxDim
+# def loadSphere2():
+#     # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
+#     # With GUV1, 15x15x15 ranges from 15 - 37
+#     with open('samples/SolidSphere2Trimmed.txt', 'r') as f: text = f.read()
+#     for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
+#     array = eval(text)
+#     boundingBoxDim = [5.1899999999999995, 5.1899999999999995, 5.1899999999999995]
+#     return np.array(array)
+#
+# def loadSphere1():
+#     # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
+#     # With GUV1, 15x15x15 ranges from 15 - 37
+#     with open('samples/SolidSphere1Trimmed.txt', 'r') as f: text = f.read()
+#     for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
+#     array = eval(text)
+#     boundingBoxDim = [8.65, 8.65, 8.65]
+#     return np.array(array)
+#
+# def loadGUV1():
+#     # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
+#     # With GUV1, 15x15x15 ranges from 15 - 37
+#     with open('samples/GUV1trimmed.txt', 'r') as f: text = f.read()
+#     for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
+#     array = eval(text)
+#     boundingBoxDim = [25.95, 25.95, 25.95]
+#     return np.array(array), boundingBoxDim
+#
+# def loadGUV2():
+#     # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
+#     # With GUV1, 15x15x15 ranges from 15 - 37
+#     #{"GUV center=", {32.005, 32.005, 32.005}, ", GUV radius=", 30.275, ", membrane thick=", 1.73}
+#     #{64.01, 64.01, 64.01}
+#     with open('samples/GUV2BTrimmed.txt', 'r') as f: text = f.read()
+#     for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
+#     array = eval(text)
+#     boundingBoxDim = [64.01, 64.01, 64.01]
+#     return np.array(array), boundingBoxDim
 
 def sample_2by2():
     array = [

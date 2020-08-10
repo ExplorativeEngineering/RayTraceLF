@@ -8,7 +8,7 @@ in other words voxCtr is the center of object space."""
 import numpy as np
 import matplotlib.pyplot as plt
 import LFRayTraceVoxParams
-from LFRayTraceVoxSpace import getVoxelDims, entranceExitX, entranceExitYZ
+from LFRayTraceVoxSpace import getVoxelDims
 
 """
 July 30 or so...
@@ -94,9 +94,10 @@ if __name__ == '__main__':
     # test
     voxPitch = (26/15)
     print("voxPitch:", voxPitch)
-    voxCtr, voxNrX, voxNrYZ = getVoxelDims(entranceExitX, entranceExitYZ, voxPitch)
-    print("    voxCtr, voxNrX, voxNrYZ: ", LFRayTraceVoxParams.formatList(voxCtr), voxNrX, voxNrYZ, "  extent(", entranceExitX,
-          entranceExitYZ, "microns )")
+    voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, voxPitch)
+    print("    voxCtr, voxNrX, voxNrYZ: ", LFRayTraceVoxParams.formatList(voxCtr), voxNrX, voxNrYZ, "  extent(",
+          LFRayTraceVoxParams.entranceExitX,
+          LFRayTraceVoxParams.entranceExitYZ, "microns )")
     camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
     # Diagnostic...
     # Plot Entrance

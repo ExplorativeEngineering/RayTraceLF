@@ -1,16 +1,26 @@
 
+Description of algorithm ---
+
+- schematic of process and objects
+
+
 Organization of Light Field Ray Trace Projector Code
 ----------------------------------------------------
 
 RO
 
 To Use:
-    1) Change the parameters in LFRayTraceVoxParams
+    1) Change the parameters in LFRayTraceVoxParams:
+            voxPitch (resolution) and # of uLenses
     2) Run LFRayTraceVoxGenerate
-        This generates the LFRayTraceVoxel model for each of the parameters
+        This generates the LFRayTraceVoxel model for each of the parameters.
     3) In LFRayTraceVoxProjection.py, set the samples to be projected.
-    3) Run LFRayTraceVoxProjection
+
+    4) Run LFRayTraceVoxProjection
         This creates LF images for all the sample
+
+Python code  files:
+
     LFRayTraceVoxParams.py
         Set the Input parameters for both generating (run LFRayTraceVoxGenerate) and
         projecting (run LFRayTraceVoxProjection):
@@ -25,14 +35,12 @@ To Use:
     LFRayTraceVoxSpace.py
         Calculates coordinates, transforms
 
-
-
     siddon2.py
-
         The Siddon algorithm.
 
     camRayEntrance.py
-        Reads camRayEntrance.txt to create camPix and Entrance coord arrays.  Calcs Exit coord array
+        Reads camRayEntrance.txt to create camPix and Entrance coord arrays.
+        Calculates Exit coordinates array.
 
     samples.py
         Creates test samples
@@ -42,7 +50,7 @@ To Use:
             These object can be displaced within the object space by changing
                 offsets = [0, 20, 20]
             in the runProjection function.
-
+Input Data:
     samples/ directory
         contains sample objects in .txt formats (from Mathematica)
         Test Samples include:
@@ -51,6 +59,8 @@ To Use:
         The second bundle (bundle2_45_45.txt) is first rotated by 45 degree around the X-axis and then rotated out of the Y-Z plane by 45 degree.
         The third bundle (bundle3_0_90.txt) is parallel to the X-axis.
         The bundles are all rasterized with a voxelPitch of 0.865µm.
+
+Notes:
 
 -- Orientation of Axes, Coordinated
 	I've choosen to consistently display results using an origin (0,0) at lower left.
@@ -93,6 +103,7 @@ If many occupied voxels, accum intensity goes nuts...
 Image Data Management
 
     Add Metadata in tiff file
+
 
 ImageNavigator
 

@@ -1,6 +1,7 @@
 import multiprocessing
 import math
 from pathlib import Path
+
 # ==== INPUTS ==================================================
 # voxPitch is the side length in microns of a cubic voxel in object space;
 # and of a square cell of the entrance and exit face, it determines digital voxel resolution
@@ -10,8 +11,18 @@ from pathlib import Path
 voxPitches = [(26 / 15)]
 # ulenseses = [8, 16, 32, 64, 115]
 # ulenseses = [9, 25, 49, 81, 115]
-ulenseses = [3, 4, 5]
+ulenseses = [1]
 
+# ===================================
+# ?
+displace = [0, 0, 0]
+# Entrance, Exit planes are 700 x 700, 250 apart (um)
+entranceExitX = 250  # microns
+entranceExitYZ = 700  # microns
+#workingSpaceX = 100  # 100 microns
+# todo FOR DEBUGGING...
+workingSpaceX = 20  # TEST
+# workingSpaceYZ is a function of the number of uLenses
 
 # Optical System Parameters ==============================================================
 magnObj = 60  # magnification of objective lens
@@ -37,7 +48,8 @@ print("uLensPitch:", uLensPitch)
 # Data Types, Ranges (for encoding)
 # TODO what is maximum accumulated intensity?
 # depends on output image depth
-intensity_multiplier = 1000
+# data type of the resulting LF Image
+intensity_multiplier = 10000
 length_div = 6000
 # lengths as high as 7.9....
 # TODO div. length by voxPitch, then sqrt(3) into 64000

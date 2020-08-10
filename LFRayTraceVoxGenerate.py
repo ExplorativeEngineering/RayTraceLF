@@ -6,7 +6,8 @@ import numpy as np
 
 
 import LFRayTraceVoxParams
-from LFRayTraceVoxSpace import entranceExitX, entranceExitYZ, getVoxelDims, getWorkingDims
+
+from LFRayTraceVoxSpace import getVoxelDims, getWorkingDims
 # TODO
 from camRayEntrance import camRayEntrance
 from utils import timer, sizeOf
@@ -55,6 +56,8 @@ def showMidPointsAndLengths(camPix, midpointsList, lengthsList):
         # print("midPtsListLen", i, len(midpointsList[i]))
         image[int(camPix[i][0]-1), int(camPix[i][1])-1] = len(midpointsList[i])
     plt.figure("Number of MidPoints")
+    # plt.interactive(False)
+    plt.show(block=False)
     plt.imshow(image, cmap=plt.cm.hot)
     plt.show()
 
@@ -62,6 +65,7 @@ def showMidPointsAndLengths(camPix, midpointsList, lengthsList):
     for i in range(len(camPix)):  # 164 rays
         image[int(camPix[i][0] - 1), int(camPix[i][1]) - 1] = len(lengthsList[i])
     plt.figure("Number of Lengths")
+    plt.show(block=False)
     plt.imshow(image, cmap=plt.cm.hot)
     plt.show()
 
@@ -72,19 +76,22 @@ def showMidPointsAndLengths(camPix, midpointsList, lengthsList):
             lengthsSum = lengthsSum + lengthsList[i][j]
         image[int(camPix[i][0]-1), int(camPix[i][1])-1] = lengthsSum
     plt.figure("Lengths Sum")
+    plt.show(block=False)
     plt.imshow(image, cmap=plt.cm.hot)
     plt.show()
 
 
 def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
+    # pre-calculates y and z components of the shifted midpoints so as to accelerate
+    # the calculation in genLightFieldVoxels...
     # Generate offsets in voxels
     voxPitchOver1 = 1 / voxPitch_
-    # Xmin = 10000
-    # Xmax = 0
-    # Ymin = 10000
-    # Ymax = 0
-    # Zmin = 10000
-    # Zmax = 0
+    Xmin = 10000
+    Xmax = 0
+    Ymin = 10000
+    Ymax = 0
+    Zmin = 10000
+    Zmax = 0
     # Z =======================
     # extract the Z components
     midsZ= []
@@ -100,8 +107,8 @@ def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
         for n in range(len(midsOffZ[l])):
             for m in range(len(midsOffZ[l][n])):
                 midsOffZ[l][n][m] = math.ceil((midsOffZ[l][n][m] + offsetZ) * voxPitchOver1)
-                #if midsOffZ[l][n][m] > Zmax: Zmax = midsOffZ[l][n][m]
-                #if midsOffZ[l][n][m] < Zmin: Zmin = midsOffZ[l][n][m]
+                if midsOffZ[l][n][m] > Zmax: Zmax = midsOffZ[l][n][m]
+                if midsOffZ[l][n][m] < Zmin: Zmin = midsOffZ[l][n][m]
     # Y ========================
     # extract the Y components
     midsY= []
@@ -117,8 +124,8 @@ def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
         for n in range(len(midsOffY[l])):
             for m in range(len(midsOffY[l][n])):
                 midsOffY[l][n][m] = math.ceil((midsOffY[l][n][m] + offsetY) * voxPitchOver1)
-                #if midsOffY[l][n][m] > Ymax: Ymax = midsOffZ[l][n][m]
-                #if midsOffY[l][n][m] < Ymin: Ymin = midsOffZ[l][n][m]
+                if midsOffY[l][n][m] > Ymax: Ymax = midsOffZ[l][n][m]
+                if midsOffY[l][n][m] < Ymin: Ymin = midsOffZ[l][n][m]
     # X =============================
     # Generate (not Offset) X List
     midsX= []
@@ -128,9 +135,9 @@ def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
            x = math.ceil(midpointsList_[n][m][0] * voxPitchOver1)
            midsX[n].append(x)
            #midsX[n].append(math.ceil(midpointsList_[n][m][0] * voxPitchOver1))
-           #if x > Xmax: Xmax = x
-           #if x < Xmin: Xmin = x
-    # print("Xmin,Xmax,Ymin,Ymax,Zmin,Zmax:", Xmin, Xmax, Ymin, Ymax, Zmin, Zmax)
+           if x > Xmax: Xmax = x
+           if x < Xmin: Xmin = x
+    print("Xmin,Xmax,Ymin,Ymax,Zmin,Zmax:", Xmin, Xmax, Ymin, Ymax, Zmin, Zmax)
     return midsX, midsOffY, midsOffZ
 
 
@@ -139,6 +146,7 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
     # Array of empty lists -> voxel = [[[[] for iZ in xrange(nZ)] for iY in xrange(nY)] for iX in xrange(nX)]
     wbx = workingBox[0][1] - workingBox[0][0]
     wbyz = workingBox[1][1] - workingBox[1][0]
+
     voxel = np.empty([wbx, wbyz, wbyz], dtype='object')
     # voxel[ [x,y,z], has list of rays passing through it: [ray(nRay, nZ, nY, len)] ]
     # ??? class Ray(Structure):_fields_ = [('nRay', c_ubyte), ('nZ', c_ubyte), ('nY', c_ubyte), ('len', c_ubyte)]
@@ -150,21 +158,47 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
                 nZ = k
                 nY = j
                 for nRay in range(len(camPix)):  # iterate over the 164 rays
-                    for midpt in range(len(midsX[nRay])):  # number of midpoints
+                    print("nRay, # of Mids", nRay, len(midsX[nRay]))
+                    for midpt in range(len(midsX[nRay])):  # number of midpoints on this ray
                         # x, y, z = int(midsX[nRay][midpt]), \
                         #           int(midsOffY[nY][nRay][midpt]), \
                         #           int(midsOffZ[nZ][nRay][midpt])
-                        x, y, z = int(midsX[nRay][midpt] - workingBox[0][0]), \
-                                  int(midsOffY[nY][nRay][midpt] - workingBox[1][0]), \
-                                  int(midsOffZ[nZ][nRay][midpt] - workingBox[2][0])
-                        print("nZ, nY, nRay, x, y, z", nZ, nY, nRay, x, y, z)
+                        #print("type(midsOffY[nZ][nRay][midpt])", type(midsOffY[nZ][nRay][midpt]))
+                        #print("type(workingBox[0][0])", type(workingBox[0][0]))
+                        print("     MidPt: ", midpt, ":",
+                              midsX[nRay][midpt],
+                              midsOffY[nY][nRay][midpt],
+                              midsOffZ[nZ][nRay][midpt],
+                              "    ",
+                              workingBox[0][0],
+                              workingBox[1][0],
+                              workingBox[2][0]
+                              )
+                        # x, y, z = int(midsX[nRay][midpt] - workingBox[0][0]), \
+                        #           int(midsOffY[nY][nRay][midpt] - workingBox[1][0]), \
+                        #           int(midsOffZ[nZ][nRay][midpt] - workingBox[2][0])
+                        x0 = workingBox[0][0]
+                        y0 = workingBox[1][0]
+                        z0 = workingBox[2][0]
+                        xM = midsX[nRay][midpt]
+                        yM = midsOffY[nY][nRay][midpt]
+                        zM = midsOffZ[nZ][nRay][midpt]
+                        x = xM - x0
+                        y = yM - y0
+                        z = zM - z0
+                        # x = midsX[nRay][midpt] - workingBox[0][0]
+                        # y = midsOffY[nY][nRay][midpt] - workingBox[1][0]
+                        # z = midsOffZ[nZ][nRay][midpt] - workingBox[2][0]
                         if 0 <= x < wbx and 0 <= y < wbyz and  0 <= z < wbyz:
+                            print("     nZ, nY, nRay,   x, y, z:  ", nZ, nY, nRay, "   ", x, y, z)
                             packedRay = struct.pack('BBBH', nRay, nZ, nY,
                                                     int(lengthsList[nRay][midpt] * LFRayTraceVoxParams.length_div))
                             if voxel[x][y][z] is None:
                                 voxel[x][y][z] = [packedRay]
                             else:
                                 voxel[x][y][z].append(packedRay)
+                        else:
+                            print("  *  nZ, nY, nRay,   x, y, z:  ", nZ, nY, nRay, "   ", x, y, z)
     # def chunks(l, n):
     #number_of_rays = 0
     numProc = LFRayTraceVoxParams.getNumProcs()
@@ -175,33 +209,33 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
     #print("number_of_rays:", number_of_rays)
     return voxel
 
-def generateLightFieldVoxelRaySpace(ulenses_, uLensPitch_, voxPitch_, entrance_, exits_, workingBox_):
-    timer.startTime()
-    # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
-    midpointsList, lengthsList = genMidPtsLengthswithSiddon(entrance_, exits_, workingBox_, voxPitch_)
-    print("   len(midpointsList)   :",len(midpointsList))
-    print("   max(lengthsList)     :", max(lengthsList))
-    print("   max(max(lengthsList)):", max(max(lengthsList)))
-    anglesList = LFRayTraceVoxParams.genRayAngles(entrance_, exits_)
-    timer.endTime("        Siddon")
-    # diagnostic...
-    showMidPointsAndLengths(camPix, midpointsList, lengthsList)
-    # given uLenses, gen offsets
-    timer.startTime()
-    midsX, midsOffY, midsOffZ = generateYZOffsets(midpointsList, ulenses_, uLensPitch_, voxPitch_)
-    timer.endTime("        generateOffsets")
-    print("    midsX   :", len(midsX))
-    print("    midsOffY:", len(midsOffY))
-    print("    midsOffZ:", len(midsOffZ))
-
-    # print("lengthsList,angleList: ", len(lengthsList), len(anglesList))
-
-    timer.startTime()
-    voxel = genLightFieldVoxels(workingBox_, ulenses_, camPix, midsX, midsOffY, midsOffZ, lengthsList, anglesList)
-    timer.endTime("        genLightFieldVoxels")
+# def generateLightFieldVoxelRaySpace(ulenses_, uLensPitch_, voxPitch_, entrance_, exits_, workingBox_):
+    # timer.startTime()
+    # # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
+    # midpointsList, lengthsList = genMidPtsLengthswithSiddon(entrance_, exits_, workingBox_, voxPitch_)
+    # print("workingBox_:", workingBox_)
+    # print("   len(midpointsList)   :",len(midpointsList))
+    # print("   max(lengthsList)     :", max(lengthsList))
+    # print("   max(max(lengthsList)):", max(max(lengthsList)))
+    # anglesList = LFRayTraceVoxParams.genRayAngles(entrance_, exits_)
+    # timer.endTime("        Siddon")
+    # # diagnostic...
+    # showMidPointsAndLengths(camPix, midpointsList, lengthsList)
+    # # given uLenses, gen offsets
+    # timer.startTime()
+    # midsX, midsOffY, midsOffZ = generateYZOffsets(midpointsList, ulenses_, uLensPitch_, voxPitch_)
+    # timer.endTime("        generateOffsets")
+    # print("    midsX   :", len(midsX))
+    # print("    midsOffY:", len(midsOffY))
+    # print("    midsOffZ:", len(midsOffZ))
+    # # print("lengthsList,angleList: ", len(lengthsList), len(anglesList))
+    #
+    # timer.startTime()
+    # voxel = genLightFieldVoxels(workingBox_, ulenses_, camPix, midsX, midsOffY, midsOffZ, lengthsList, anglesList)
+    # timer.endTime("        genLightFieldVoxels")
     #sizeOfLFVox(voxel)
     #print("voxel size: ", sizeOf.getsize(voxel))
-    return voxel
+    # return voxel
 
 # ======================================================
 # Saving/Loading LFRTVs
@@ -218,14 +252,15 @@ def loadLightFieldVoxelRaySpace(filename):
 # DIAGNOSTIC ===============================
 def showRaysInVoxels(voxel):
     # diagnostic: shows number of rays in each voxel
+    print("voxel.shape:", voxel.shape)
     for x in range(voxel.shape[0]):
         for y in range(voxel.shape[1]):
             for z in range(voxel.shape[2]):
                 rays = voxel[x][y][z]
                 if rays is None:
-                    print( x,y,z, " No rays in voxel")
+                    print( x,y,z, " : -----")
                 else:
-                    print(x, y, z, len(rays))
+                    print(x, y, z, " : ", len(rays))
                     for ray in range(len(rays)):
                         if rays[ray] is not None:
                             unpackedRay = struct.unpack('BBBH', rays[ray])
@@ -245,31 +280,60 @@ voxel = None
 # midsX, midsOffY, midsOffZ
 
 if __name__ == "__main__":
-
+    import sys
+    sys.stdout = open('outputGen.txt', 'wt')
     for ulenses in LFRayTraceVoxParams.ulenseses:
         for voxPitch in LFRayTraceVoxParams.voxPitches:
             print("Generating lfvox w/ ulenses, voxPitch: ", ulenses, voxPitch)
-            voxCtr, voxNrX, voxNrYZ = getVoxelDims(entranceExitX, entranceExitYZ, voxPitch)
-            print("    voxelDims:", LFRayTraceVoxParams.formatList(voxCtr), voxNrX, voxNrYZ, "(", entranceExitX,
-                  entranceExitYZ, "microns)")
-            #
+            voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX,
+                                                   LFRayTraceVoxParams.entranceExitYZ, voxPitch)
+            print("   EXdims voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
+                  " (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, "microns )  ",
+                  "  voxels: ", voxNrX, voxNrYZ, voxNrYZ)
             camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
             # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
             anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits)
-            #
             workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
+
+            timer.startTime()
+            # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
+            midpointsList, lengthsList = genMidPtsLengthswithSiddon(entrance, exits, workingBox, voxPitch)
+            print("workingBox_:", workingBox)
+            print("   len(midpointsList)   :", len(midpointsList))
+            print("   max(lengthsList)     :", max(lengthsList))
+            print("   max(max(lengthsList)):", max(max(lengthsList)))
+            timer.endTime("        Siddon")
+            # diagnostic...
+            showMidPointsAndLengths(camPix, midpointsList, lengthsList)
+            # given uLenses, gen offsets
+            exit(0)
+            timer.startTime()
+            midsX, midsOffY, midsOffZ = generateYZOffsets(midpointsList, ulenses, LFRayTraceVoxParams.uLensPitch, voxPitch)
+            timer.endTime("        generateOffsets")
+            print("    midsX   :", len(midsX))
+            print("    midsOffY:", len(midsOffY))
+            print("    midsOffZ:", len(midsOffZ))
+            # print("lengthsList,angleList: ", len(lengthsList), len(anglesList))
+
+            timer.startTime()
+            voxel = genLightFieldVoxels(workingBox, ulenses, camPix,
+                                        midsX, midsOffY, midsOffZ,
+                                        lengthsList,
+                                        anglesList)
+            timer.endTime("        genLightFieldVoxels")
             # Create LightFieldVoxelRaySpace
-            voxel = generateLightFieldVoxelRaySpace(
-                ulenses,
-                LFRayTraceVoxParams.uLensPitch,
-                voxPitch,
-                entrance, exits,
-                workingBox)
+            # voxel = generateLightFieldVoxelRaySpace(
+            #     ulenses,
+            #     LFRayTraceVoxParams.uLensPitch,
+            #     voxPitch,
+            #     entrance, exits,
+            #     workingBox)
             # save to disk ============================================
             parameters, path, lfvox_filename = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
             saveLightFieldVoxelRaySpace(path + "lfvox_" + parameters, voxel)
                 # LightFieldVoxelRaySpace voxel files are saved in the directory corresponding to its parameters
             print('    Saved LightFieldVoxelRaySpace to: ', parameters)
+            # TODO Diagnostic
             showRaysInVoxels(voxel)
             del voxel
 
