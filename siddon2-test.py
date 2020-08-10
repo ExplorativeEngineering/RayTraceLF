@@ -33,18 +33,19 @@ dx, dy, dz = 0.1, 0.1, 0.1
 pix_numXIn, pix_numXOut, pix_numYIn, pix_numYOut, pix_numZIn, pix_numZOut = 0, 25, 0, 25, 0, 25
 """
 
-
+voxCtr = [125.666666,351,351]
 
 x1, y1, z1 = 0.0, 281.03366217675773, 281.03366217675773
 # 0, 162, 162
-x2, y2, z2 = 50.85, 452.6729317038439, 430.2879679429044
+x2, y2, z2 = 2*voxCtr[0], voxCtr[1]-(y1-voxCtr[1]), voxCtr[2]-(z1-voxCtr[2])
 # 29, 261, 248
-dx, dy, dz = 1.73, 1.73, 1.73
+dx, dy, dz = 26/15, 26/15, 26/15
+print("ray exit",x2,y2,z2)
 
 #pix_numXIn, pix_numXOut, pix_numYIn, pix_numYOut, pix_numZIn, pix_numZOut = 65, 80, 195, 210, 195, 210
 # 112, 138, 337, 363, 337, 363,
 
-pix_numXIn, pix_numXOut, pix_numYIn, pix_numYOut, pix_numZIn, pix_numZOut = 0, 145, 0, 405, 0, 405
+pix_numXIn, pix_numXOut, pix_numYIn, pix_numYOut, pix_numZIn, pix_numZOut = 72, 73, 202, 203, 202, 203
 """
 
 x1, y1, z1 = 0, 0, 0
@@ -61,14 +62,14 @@ args = (x1, y1, z1, x2, y2, z2)
 # call rayTrace only once, then pass to midPoints and lengths
 alist = raytrace(*args1)
 
-midpoints = midpoints(*args, alist)
+midpoints1 = midpoints(*args, alist)
 lengths = intersect_length(*args, alist)
-print('Midpoints: ' + str([(round(x[0], 3), round(x[1], 3), round(x[2], 3)) for x in midpoints]))
+print('Midpoints: ' + str([(round(x[0], 3), round(x[1], 3), round(x[2], 3)) for x in midpoints1]))
 print('Lengths: ' + str([round(x, 3) for x in lengths]))
 
 # Check lengths
 from math import sqrt
-print("#midpoints: ",len(midpoints))
+print("#midpoints: ", len(midpoints1))
 print("#lengths: ",len(lengths))
 print('Input length: ' + str(sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)))
 print('Output length: ' + str(sum(lengths)))
