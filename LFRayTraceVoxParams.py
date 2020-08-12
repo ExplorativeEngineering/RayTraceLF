@@ -11,7 +11,7 @@ from pathlib import Path
 voxPitches = [(26 / 15)]
 # ulenseses = [8, 16, 32, 64, 115]
 # ulenseses = [9, 25, 49, 81, 115]
-ulenseses = [1]
+ulenseses = [10]
 
 # ===================================
 # ?

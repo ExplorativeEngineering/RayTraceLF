@@ -245,6 +245,7 @@ maxIntensity = 0
 
 ulenses = 7
 bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
+
 for k in range(-ulenses // 2, ulenses // 2):
     for j in range(-ulenses // 2, ulenses // 2):
         yOffset = j * uLensPitch
@@ -297,7 +298,6 @@ for k in range(-ulenses // 2, ulenses // 2):
             image[int(camArray[i][0]), int(camArray[i][1])] = camArray[i][2]
         images.append(image)
         '''
-
 
 plt.figure("Image ")
         #plt.imshow(image, cmap=plt.cm.hot)

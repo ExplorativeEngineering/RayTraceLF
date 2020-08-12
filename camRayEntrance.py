@@ -23,8 +23,6 @@ coordinate entry in camRayEntrance and then add the voxCtr for the current voxPi
 The result should be camRayEntrance coordinates that are corrected for the new voxCtr. 
 """
 
-
-
 """ For the current optical setup (60x/1.2NA objective, Hamamatsu Flash4 camera), 
 there are 164 camera pixels exposed to light and each of which receives a ray 
 that has gone through object space. The list in file camRayEntrance.txt has 
@@ -32,21 +30,22 @@ that has gone through object space. The list in file camRayEntrance.txt has
 the camera and the location {0, y[i,j], z[I,j] } where the ray associated 
 with {i, j} enters object space."""
 
-""" camRayEntrance - 
-  Locations of rays where they pass through the entrance face 
-  into object space.  Proved in file camRayEntrance.txt.
+# camRayEntrance -
+#   Locations of rays where they pass through the entrance face
+#   into object space.  Proved in file camRayEntrance.txt.
+#
+#   camRayEntrance[[1]] = {{2., 6.}, {0., 269.23612015234846, 139.08124584061335}}
+#   ...
+#   camRayEntrance[[164]] = {{15., 11.}, {0., 431.4138798476515, 561.5687541593866}}
 
-  camRayEntrance[[1]] = {{2., 6.}, {0., 269.23612015234846, 139.08124584061335}}
-  ...
-  camRayEntrance[[164]] = {{15., 11.}, {0., 431.4138798476515, 561.5687541593866}}
+# The entrance face to object space is characterized by x = 0 for all rays.
+# For the exit face, x = 2 * voxCtr[[1]], where voxCtr[[1]] is the x-component of voxCtr.
+# The y- and z-components of the exit face location of ray {i, j} can be constructed
+# with voxCtr and the entrance face coordinates {0, y{i,j}, z{i,j}}.
+# The y- and z-components of the exit face locations are
+# 2 * voxCtr[[2]] - y{I,j} and 2 * voxCtr[[3]] - z{I,j}, respectively.
 
-The entrance face to object space is characterized by x = 0 for all rays. 
-For the exit face, x = 2 * voxCtr[[1]], where voxCtr[[1]] is the x-component of voxCtr. 
-The y- and z-components of the exit face location of ray {i, j} can be constructed
-with voxCtr and the entrance face coordinates {0, y{i,j}, z{i,j}}. 
-The y- and z-components of the exit face locations are 
-2 * voxCtr[[2]] - y{I,j} and 2 * voxCtr[[3]] - z{I,j}, respectively.
-"""
+
 
 def camRayEntrance(voxCtr):
     # imports camRayEntrance and camPix from file
@@ -65,9 +64,14 @@ def camRayEntrance(voxCtr):
         camPix.append(rays[i][0])
         entrance.append(rays[i][1])
         # ray[i][1][0] is zero
-        ex = [rays[i][1][0] + 2 * voxCtr[0],
-              rays[i][1][1] + 2 * (voxCtr[1] - rays[i][1][1]),
-              rays[i][1][2] + 2 * (voxCtr[2] - rays[i][1][2])]
+        # ex = [rays[i][1][0] + 2 * voxCtr[0],
+        #        rays[i][1][1] + 2 * (voxCtr[1] - rays[i][1][1]),
+        #        rays[i][1][2] + 2 * (voxCtr[2] - rays[i][1][2])]
+        ex = [2 * voxCtr[0],
+              2 * voxCtr[1] - rays[i][1][1],
+              2 * voxCtr[2] - rays[i][1][2]]
+            # x = 2 * voxCtr[[1]], where voxCtr[[1]] is the x-component of voxCtr.
+            # y and z, 2 * voxCtr[[2]] - y{I,j} and 2 * voxCtr[[3]] - z{I,j}, respectively.
         exit.append(ex)
     # print("CamPix, Entrance, Exit =========================== ")
     # for i in range(len(rays)):
@@ -100,7 +104,7 @@ if __name__ == '__main__':
           LFRayTraceVoxParams.entranceExitYZ, "microns )")
     camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
     # Diagnostic...
-    # Plot Entrance
+    # Plot Entrance --------------------------
     ent = np.array(entrance)
     y = ent[:, [1]]
     z = ent[:, [2]]
@@ -114,8 +118,22 @@ if __name__ == '__main__':
     plt.xlabel('y')
     plt.ylabel('z')
     plt.show()
-    # Plot camPix
+    # Plot Exit --------------------------
+    exi = np.array(exits)
+    y = exi[:, [1]]
+    z = exi[:, [2]]
+    #colors = (0, 0, 0)
+    area = np.pi * 3
 
+    plt.figure("Exit Coordinates")
+    plt.scatter(y, z, s=area, alpha=0.5)
+    # plt.scatter(y, z, s=area, c=colors, alpha=0.5)
+    plt.title('Exit')
+    plt.xlabel('y')
+    plt.ylabel('z')
+    plt.show()
+
+    # Plot camPix ------------------------
     ent = np.array(camPix)
     y = ent[:, [0]]
     z = ent[:, [1]]

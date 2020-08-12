@@ -85,7 +85,7 @@ def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
     # pre-calculates y and z components of the shifted midpoints so as to accelerate
     # the calculation in genLightFieldVoxels...
     # Generate offsets in voxels
-    voxPitchOver1 = 1 / voxPitch_
+    voxPitchOver1 = 1.0 / voxPitch_
     Xmin = 10000
     Xmax = 0
     Ymin = 10000
@@ -101,12 +101,16 @@ def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
            midsZ[n].append(midpointsList_[n][m][2])
     # Generate Offset Z List =================
     midsOffZ = [[] for i in range(ulenses_)]
+    # TODO added 0.5 ???
     for l in range(ulenses_):
-        offsetZ = (l - ulenses_ / 2) * uLensPitch_
+        offsetZ = (l + 0.5 - ulenses_ / 2) * uLensPitch_
         midsOffZ[l] = copy.deepcopy(midsZ)
+        print("l, offsetZ", l, offsetZ)
         for n in range(len(midsOffZ[l])):
             for m in range(len(midsOffZ[l][n])):
-                midsOffZ[l][n][m] = math.ceil((midsOffZ[l][n][m] + offsetZ) * voxPitchOver1)
+                z = midsOffZ[l][n][m]
+                zOff = math.ceil((z + offsetZ) * voxPitchOver1)
+                midsOffZ[l][n][m] = zOff
                 if midsOffZ[l][n][m] > Zmax: Zmax = midsOffZ[l][n][m]
                 if midsOffZ[l][n][m] < Zmin: Zmin = midsOffZ[l][n][m]
     # Y ========================
@@ -119,7 +123,7 @@ def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
     # Generate Offset Y List =================
     midsOffY = [[] for i in range(ulenses_)]
     for l in range(ulenses_):
-        offsetY = (l - ulenses_ / 2) * uLensPitch_
+        offsetY = (l + 0.5 - ulenses_ / 2) * uLensPitch_
         midsOffY[l] = copy.deepcopy(midsY)
         for n in range(len(midsOffY[l])):
             for m in range(len(midsOffY[l][n])):
@@ -158,47 +162,36 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
                 nZ = k
                 nY = j
                 for nRay in range(len(camPix)):  # iterate over the 164 rays
-                    print("nRay, # of Mids", nRay, len(midsX[nRay]))
+                    # print("nRay, # of Mids", nRay, len(midsX[nRay]))
                     for midpt in range(len(midsX[nRay])):  # number of midpoints on this ray
                         # x, y, z = int(midsX[nRay][midpt]), \
                         #           int(midsOffY[nY][nRay][midpt]), \
                         #           int(midsOffZ[nZ][nRay][midpt])
                         #print("type(midsOffY[nZ][nRay][midpt])", type(midsOffY[nZ][nRay][midpt]))
                         #print("type(workingBox[0][0])", type(workingBox[0][0]))
-                        print("     MidPt: ", midpt, ":",
-                              midsX[nRay][midpt],
-                              midsOffY[nY][nRay][midpt],
-                              midsOffZ[nZ][nRay][midpt],
-                              "    ",
-                              workingBox[0][0],
-                              workingBox[1][0],
-                              workingBox[2][0]
-                              )
-                        # x, y, z = int(midsX[nRay][midpt] - workingBox[0][0]), \
-                        #           int(midsOffY[nY][nRay][midpt] - workingBox[1][0]), \
-                        #           int(midsOffZ[nZ][nRay][midpt] - workingBox[2][0])
-                        x0 = workingBox[0][0]
-                        y0 = workingBox[1][0]
-                        z0 = workingBox[2][0]
-                        xM = midsX[nRay][midpt]
-                        yM = midsOffY[nY][nRay][midpt]
-                        zM = midsOffZ[nZ][nRay][midpt]
-                        x = xM - x0
-                        y = yM - y0
-                        z = zM - z0
-                        # x = midsX[nRay][midpt] - workingBox[0][0]
-                        # y = midsOffY[nY][nRay][midpt] - workingBox[1][0]
-                        # z = midsOffZ[nZ][nRay][midpt] - workingBox[2][0]
+                        # print("     MidPt: ", midpt, ":",
+                        #       midsX[nRay][midpt],
+                        #       midsOffY[nY][nRay][midpt],
+                        #       midsOffZ[nZ][nRay][midpt],
+                        #       "    ",
+                        #       workingBox[0][0],
+                        #       workingBox[1][0],
+                        #       workingBox[2][0]
+                        #       )
+                        # add this ray in EX space to list of rays for the corresponding voxel coord in working space
+                        x, y, z = int(midsX[nRay][midpt] - workingBox[0][0]-1), \
+                                  int(midsOffY[nY][nRay][midpt] - workingBox[1][0]-1), \
+                                  int(midsOffZ[nZ][nRay][midpt] - workingBox[2][0]-1)
                         if 0 <= x < wbx and 0 <= y < wbyz and  0 <= z < wbyz:
-                            print("     nZ, nY, nRay,   x, y, z:  ", nZ, nY, nRay, "   ", x, y, z)
+                            #print("     nZ, nY, nRay,   x, y, z:  ", nZ, nY, nRay, "   ", x, y, z)
                             packedRay = struct.pack('BBBH', nRay, nZ, nY,
                                                     int(lengthsList[nRay][midpt] * LFRayTraceVoxParams.length_div))
                             if voxel[x][y][z] is None:
                                 voxel[x][y][z] = [packedRay]
                             else:
                                 voxel[x][y][z].append(packedRay)
-                        else:
-                            print("  *  nZ, nY, nRay,   x, y, z:  ", nZ, nY, nRay, "   ", x, y, z)
+                        #else:
+                         #   print("  *  nZ, nY, nRay,   x, y, z:  ", nZ, nY, nRay, "   ", x, y, z)
     # def chunks(l, n):
     #number_of_rays = 0
     numProc = LFRayTraceVoxParams.getNumProcs()
@@ -280,36 +273,31 @@ voxel = None
 # midsX, midsOffY, midsOffZ
 
 if __name__ == "__main__":
-    import sys
-    sys.stdout = open('outputGen.txt', 'wt')
+    # import sys
+    # sys.stdout = open('outputGen.txt', 'wt')
     for ulenses in LFRayTraceVoxParams.ulenseses:
         for voxPitch in LFRayTraceVoxParams.voxPitches:
-            print("Generating lfvox w/ ulenses, voxPitch: ", ulenses, voxPitch)
+            print("Generating lfvox with ulenses: ", ulenses, "  voxPitch: ", voxPitch)
             voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX,
                                                    LFRayTraceVoxParams.entranceExitYZ, voxPitch)
-            print("   EXdims voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
-                  " (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, "microns )  ",
-                  "  voxels: ", voxNrX, voxNrYZ, voxNrYZ)
+            print("   EX space specified: (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, "microns )")
+            print("   EX space, voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
+                  "  size: ", voxNrX, voxNrYZ, voxNrYZ)
             camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
             # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
             anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits)
             workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
-
-            timer.startTime()
+            print("Siddon Calcs...")
             # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
             midpointsList, lengthsList = genMidPtsLengthswithSiddon(entrance, exits, workingBox, voxPitch)
-            print("workingBox_:", workingBox)
             print("   len(midpointsList)   :", len(midpointsList))
-            print("   max(lengthsList)     :", max(lengthsList))
-            print("   max(max(lengthsList)):", max(max(lengthsList)))
-            timer.endTime("        Siddon")
-            # diagnostic...
-            showMidPointsAndLengths(camPix, midpointsList, lengthsList)
+            # print("   max(lengthsList)     :", max(lengthsList))
+            print("   max(max(lengthsList)), longest length:", max(max(lengthsList)))
+            # showMidPointsAndLengths(camPix, midpointsList, lengthsList)
             # given uLenses, gen offsets
-            exit(0)
-            timer.startTime()
+
+            print("Offsets...")
             midsX, midsOffY, midsOffZ = generateYZOffsets(midpointsList, ulenses, LFRayTraceVoxParams.uLensPitch, voxPitch)
-            timer.endTime("        generateOffsets")
             print("    midsX   :", len(midsX))
             print("    midsOffY:", len(midsOffY))
             print("    midsOffZ:", len(midsOffZ))

@@ -1,5 +1,5 @@
 import copy
-import numba
+# import numba
 #from sparse import COO
 
 from utils import sizeOf
@@ -209,7 +209,7 @@ def genMidPtsLengthsAngleswithSiddon(entrance_, exit_, voxBox_):
         lengthsList.append(lengths)
         anglesList = genRayAngles(entrance_, exit_, alist)
     print("longestMidPts: ", longestMidPts)
-    return np.array(midpointsList), np.array(lengthsList), anglesList
+    return midpointsList, lengthsList, anglesList
 
 
 def showMidPointsAndLengths(camPix, midpointsList, lengthsList):
@@ -345,7 +345,7 @@ def genLightField(ulenses, camPix, midsX, midsOffY, midsOffZ, lengthsList, angle
 # Main test
 
 def main():
-    print("Numba version:", numba.__version__)
+    # print("Numba version:", numba.__version__)
     # number of microlenses
     ulenses = 16
     print("ulenses: ", ulenses)
@@ -364,7 +364,7 @@ def main():
     displace = [0, 0, 0]
     voxBox = getBoundingBox(voxCtr, boundingBoxDim, displace)
     '''Load camRayEntrance '''
-    camPix, entrance, exits = camRayEntrance()  # 164 (x,y), (x, y, z) (x, y, z)
+    camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
     # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
     ''' Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions '''
     start = time.time()

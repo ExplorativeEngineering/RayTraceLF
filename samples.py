@@ -46,8 +46,16 @@ def sample_2by2():
         [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]],
         [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]],
         [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]]
-
     return np.array(array)
+
+# def sampleCube(cubeSize, volumeSize):
+#     array = np.zeros((volumeSize, volumeSize, volumeSize))
+#     offset = volumeSize - cubeSize
+#     for x in range(cubeSize):
+#         for y in range(cubeSize)
+#
+#         array[int(size / 2)][y][int(size / 2)] = 1
+#     return array
 
 def sample_1by1():
     array = [[[0, 0, 0], [0, 0, 0], [0, 0, 0]],
