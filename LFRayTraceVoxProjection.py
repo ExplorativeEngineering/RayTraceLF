@@ -1,26 +1,16 @@
-import multiprocessing
 import struct
-from math import ceil
-
 import matplotlib.pyplot as plt
 import numpy as np
 import tifffile
-
 import LFRayTraceVoxParams
-import samples
-from LFRayTraceVoxParams import genRayAngles, voxPitches
 from LFRayTraceVoxSpace import getVoxelDims, getWorkingDims
-
 from camRayEntrance import camRayEntrance
 from utils import timer
-
-
-# from sparse import COO
-
 
 # ======================================================
 # Saving/Loading LFRTVs
 # TODO We may also need to specify: voxPitch, ulenses, entranceExitX, entranceExitYZ, objectSpaceX, objectSpaceYZ
+
 def loadLightFieldVoxelRaySpace(filename):
     voxel = np.load(filename+".npy" , allow_pickle=True)
     return voxel
@@ -54,7 +44,6 @@ def showRaysInVoxels(voxel):
 def genLightFieldImage(ulenses, camPix, anglesList, sampleArray):
     # Generate Light field image array
     nonzeroSample = sampleArray.nonzero()
-    #bigImage = np.zeros((16 * ulenses, 16 * ulenses)) #, dtype='uint16')
     # TODO Tiff file type?
     bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
     print('    number_of_nonzero_voxels:', len(nonzeroSample[0]))
@@ -88,7 +77,7 @@ def genLightFieldImage(ulenses, camPix, anglesList, sampleArray):
                     # Add this contribution to the pixel value
                     bigImage[imgXoff, imgYoff] = bigImage[imgXoff, imgYoff] + intensity
                     number_of_rays += 1
-    print("    number_of_rays:", number_of_rays)
+    print("       Number_of_rays:", number_of_rays)
     return bigImage
 
 
@@ -107,13 +96,13 @@ def genLightFieldImageMultiProcess(ulenses, camPix, anglesList, sampleArray):
     bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint32')
     # TODO Break up into chunks for multiprocessing...
     number_of_nonzero_voxels = np.count_nonzero(sampleArray) # len(nonZeroSamples)
-    print('        number_of_nonzero_voxels:', number_of_nonzero_voxels)
+    print('        Number_of_nonzero_voxels:', number_of_nonzero_voxels)
 
     def processChunk(chunk):
         for n in range(len(chunk)):
             value = sampleArray[chunk[n][0], chunk[n][1], chunk[n][2]]
             rays = voxel[chunk[n][0], chunk[n][1], chunk[n][2]]
-            print()
+            # print()
             if rays is None:
                 pass
                 # print("rays = None in voxel: ", [nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n]])
@@ -131,8 +120,8 @@ def genLightFieldImageMultiProcess(ulenses, camPix, anglesList, sampleArray):
                         # map ray to pixel in lenslet(nY, nZ)
                         imgXoff = int(nZ * 16 + camPix[nRay][0] - 1)
                         imgYoff = int(nY * 16 + camPix[nRay][1] - 1)
-                        print("imgXoff, imgYoff, nRay, nZ, nY, length, intensity: ",
-                              imgXoff, imgYoff, nRay, nZ, nY, length, intensity)
+                        #print("imgXoff, imgYoff, nRay, nZ, nY, length, intensity: ",
+                        #      imgXoff, imgYoff, nRay, nZ, nY, length, intensity)
                         # Add this contribution to the pixel value
                         bigImage[imgXoff, imgYoff] = bigImage[imgXoff, imgYoff] + intensity
 
@@ -207,11 +196,11 @@ def projectSample(name, offsets, workingDimX, workingDimYZ, ulenses, camPix, ang
     if array.shape[0] + offsets[0] > workingDimX or \
             array.shape[1] + offsets[1] > workingDimYZ or \
             array.shape[2] + offsets[2] > workingDimYZ:
-        print("* * * Sample [" + name + "] does not fit in object space. Sample shape: " + str(array.shape))
+        print("* * * Sample object [" + name + "] does not fit in working space. Sample shape: " + str(array.shape))
         return
     sampleArray = placeInWorkingSpace(array, [workingDimX, workingDimYZ, workingDimYZ], offsets)
-    # lfImage = genLightFieldImageMultiProcess(ulenses, camPix, anglesList, sampleArray)
-    lfImage = genLightFieldImage(ulenses, camPix, anglesList,sampleArray)
+    lfImage = genLightFieldImageMultiProcess(ulenses, camPix, anglesList, sampleArray)
+    # lfImage = genLightFieldImage(ulenses, camPix, anglesList,sampleArray)
     timer.endTime("genLightFieldImage: " + name)
     if display_plot:
         plt.figure("LFImage:" + name)
@@ -237,8 +226,8 @@ def projectArray(array, name, offsets, workingDimX, workingDimYZ, ulenses, camPi
         print("* * * Sample [" + name + "] does not fit in object space. Sample shape: " + str(array.shape))
         return
     sampleArray = placeInWorkingSpace(array, [workingDimX, workingDimYZ, workingDimYZ], offsets)
-    # lfImage = genLightFieldImageMultiProcess(ulenses, camPix, anglesList, sampleArray)
-    lfImage = genLightFieldImage(ulenses, camPix, anglesList, sampleArray)
+    lfImage = genLightFieldImageMultiProcess(ulenses, camPix, anglesList, sampleArray)
+    # lfImage = genLightFieldImage(ulenses, camPix, anglesList, sampleArray)
     if display_plot:
         plt.figure("LFImage:" + name)
         glfImage = np.power(lfImage, gamma)
@@ -256,8 +245,8 @@ def projectArray(array, name, offsets, workingDimX, workingDimYZ, ulenses, camPi
 # Perspective Images ======================================================================
 
 def generatePerspectiveImages(lfImage_):
-    # Generates (uLenses x uLenses) array of (16 x 16) perspective images
-    psvImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint32')
+    # Generates (uLenses x uLenses) array of (16 x 16) perspective images, ushort
+    psvImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
     # each subimg is ulense square, calc subImages offsets..
     for sx in range(ulenses):
         for sy in range(ulenses):
@@ -277,9 +266,10 @@ gamma = 1.0  # for matplotlib (not tiff file) images:
 
 def runProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
     offsets = [0, 0, 0]
-    projectArray(samples.sample_lineY(5), "Line Y", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectArray(samples.sample_lineZ(5), "Line Z", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectArray(samples.sample_lineX(5), "Line X", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    linelen = 32
+    # projectArray(samples.sample_lineY(linelen), "Line Y", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectArray(samples.sample_lineZ(linelen), "Line Z", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectArray(samples.sample_lineX(linelen), "Line X", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     # projectArray(samples.sample_lineX2(32), "Line X", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     # projectArray(samples.sample_diag(32), "Diagonal", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     # projectArray(samples.sample_block(16), "Block16", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
@@ -307,13 +297,14 @@ def runProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
     # projectArray(samples.sample_2by2(), "2x2", offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     # #
     # offsets = [0, 0, 0]
-    projectSample('GUV1trimmed',         offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('GUV1trimmed',         offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     # projectSample('GUV2BTrimmed',        offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('SolidSphere1Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('SolidSphere2Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    #projectSample('bundle1_0_0Trimmed',  offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    #projectSample('bundle2_45_45Trimmed',offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    #projectSample('bundle3_0_90Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    projectSample('GUV2Testtrimmed',        offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('SolidSphere1Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('SolidSphere2Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('bundle1_0_0Trimmed',  offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('bundle2_45_45Trimmed',offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('bundle3_0_90Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
 
 
 
@@ -352,13 +343,14 @@ if __name__ == "__main__":
 
             voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX,
                                                    LFRayTraceVoxParams.entranceExitYZ, voxPitch)
-            print("    voxelDims:", LFRayTraceVoxParams.formatList(voxCtr), voxNrX, voxNrYZ,
-                  "(", LFRayTraceVoxParams.entranceExitX,
-                  LFRayTraceVoxParams.entranceExitYZ, "microns)")
+            print("   EX space specified: (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ,
+                  "microns )")
+            print("   EX space, voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
+                  "  size: ", voxNrX, voxNrYZ, voxNrYZ)
             camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
             # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
             anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits)
-            print("Generating lfvox w/ ulenses, voxPitch: ", ulenses, voxPitch)
+            print("Loading lfvox w/ ulenses, voxPitch: ", ulenses, voxPitch)
             workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
             del entrance
             del exits

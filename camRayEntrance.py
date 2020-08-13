@@ -73,6 +73,7 @@ def camRayEntrance(voxCtr):
             # x = 2 * voxCtr[[1]], where voxCtr[[1]] is the x-component of voxCtr.
             # y and z, 2 * voxCtr[[2]] - y{I,j} and 2 * voxCtr[[3]] - z{I,j}, respectively.
         exit.append(ex)
+        # TODO
     # print("CamPix, Entrance, Exit =========================== ")
     # for i in range(len(rays)):
     #     print(camPix[i], entrance[i], exit[i], end=" ")

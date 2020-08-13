@@ -11,7 +11,7 @@ from pathlib import Path
 voxPitches = [(26 / 15)]
 # ulenseses = [8, 16, 32, 64, 115]
 # ulenseses = [9, 25, 49, 81, 115]
-ulenseses = [10]
+ulenseses = [65]
 
 # ===================================
 # ?
@@ -19,9 +19,7 @@ displace = [0, 0, 0]
 # Entrance, Exit planes are 700 x 700, 250 apart (um)
 entranceExitX = 250  # microns
 entranceExitYZ = 700  # microns
-#workingSpaceX = 100  # 100 microns
-# todo FOR DEBUGGING...
-workingSpaceX = 20  # TEST
+workingSpaceX = 100  # 100 microns
 # workingSpaceYZ is a function of the number of uLenses
 
 # Optical System Parameters ==============================================================
@@ -49,7 +47,7 @@ print("uLensPitch:", uLensPitch)
 # TODO what is maximum accumulated intensity?
 # depends on output image depth
 # data type of the resulting LF Image
-intensity_multiplier = 10000
+intensity_multiplier = 1000
 length_div = 6000
 # lengths as high as 7.9....
 # TODO div. length by voxPitch, then sqrt(3) into 64000

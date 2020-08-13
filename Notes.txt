@@ -3,11 +3,15 @@ Description of algorithm ---
 
 - schematic of process and objects
 
+Anisotropic Projections
+
+Inputting Sample Objects for LFProjection
+
 
 Organization of Light Field Ray Trace Projector Code
 ----------------------------------------------------
 
-RO
+Assuming... optical configuration with uLenPitch of 26/15
 
 To Use:
     1) Change the parameters in LFRayTraceVoxParams:

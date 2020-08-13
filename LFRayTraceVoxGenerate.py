@@ -105,7 +105,7 @@ def generateYZOffsets(midpointsList_, ulenses_, uLensPitch_, voxPitch_):
     for l in range(ulenses_):
         offsetZ = (l + 0.5 - ulenses_ / 2) * uLensPitch_
         midsOffZ[l] = copy.deepcopy(midsZ)
-        print("l, offsetZ", l, offsetZ)
+        # print("l, offsetZ", l, offsetZ)
         for n in range(len(midsOffZ[l])):
             for m in range(len(midsOffZ[l][n])):
                 z = midsOffZ[l][n][m]
@@ -322,7 +322,7 @@ if __name__ == "__main__":
                 # LightFieldVoxelRaySpace voxel files are saved in the directory corresponding to its parameters
             print('    Saved LightFieldVoxelRaySpace to: ', parameters)
             # TODO Diagnostic
-            showRaysInVoxels(voxel)
+            # showRaysInVoxels(voxel)
             del voxel
 
     print("All done Generating LFRTVoxels.")
