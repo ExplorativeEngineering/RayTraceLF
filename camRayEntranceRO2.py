@@ -1,23 +1,25 @@
 # 15 Aug 2020, RO
-# definition of camPixRays and camRayCoord
-# camPixRays is a square list that holds values for azimuth and tilt angles in object space for rays originating in camera pixels [i,j] behind a single lenslet
-# The computation implements the sine condition for points in the back focal plane of the objective lens
-# camRayCoord(voxCtr) generates three arrays: camPix, rayEntrFace, rayExitFace.
+# Definition of methods camPixRays and camRayCoord
+# camPixRays generates a square list (nrCamPix*nrCamPix, typically 16*16 elements) that holds values for azimuth and tilt angles in object space for rays originating in camera pixels [i,j] behind a single lenslet
+# Pixels near the edge of the array that correspond to rays outside the numerical aperture of the objective lens are set to zero
+# The computation implements the sine condition for points in the back focal plane of the objective lens.
+# camRayCoord generates an array camPix of pixel indices and two arrays rayEntrFace and rayExitFace that hold the ray coordinates in the entrance and exit face of object space for the central lenslet
+# All three arrays are linear arrays whose elements are in the same sequence, so that camPix(n) is the pixel index of the ray the enters and exits object space at rayEntrFace(n) and rayExitFace(n)
 # camRayCoord(voxCtr) accepts any voxCtr and generates the correct ray coordinates in the entrance and exit face associated with voxCtr
 
 import numpy as np
 
 nMedium = 1.33      #refractive index of object medium
 naObj = 1.2         #NA of objective lens; for naObj=1.2 (water imm. objective), the tilt angle of ray passing through edge of aperture is arcSin(1.2/1.33)=64°
-rNA = 7.7           #radius of NA in aperture plane behind microlens in fraction of camera pixels; rNA=7.7 corresponds to the NA of the water imm. objective lens, 100µm uLensPitch and 6.5 µm camPix pitch (Orca Flash4)
+rNA = 7.7           #radius of NA in aperture plane behind microlens in fraction of camera pixels; rNA=7.7 is the measured aperture disc radius for the water imm. objective lens, a 100µm uLens diameter and 6.5 µm camPix pitch (Orca Flash4)
 nrCamPix = 16       #nrCamPix is the number of camera pixels behind a lenslet in the horizontal and vertical direction
                     #0<=i<=nrCamPix and 0<=j<=nrCamPix span the plane of camera pixels, with i,j Reals
-                    #integers [i,j] is the pixel count, with i and j starting at 0 and ending at nrCampix-1; [0.5,0.5] is the center location of pixel [0,0]
+                    #integers [i,j] are the pixel count, with i and j starting at 0 and ending at nrCampix-1; [0.5,0.5] is the center location of the first pixel [0,0]
 uLensCtr = [8.,8.]  #the µLens center is at the pixel border between 8th and 9th pixel, horizontally and vertically
 
 voxCtr = (377/3,351.,351.)
 
-# camPixRays is a square list that holds values (radian) for azimuth and tilt angles in object space for rays originating in camera pixels [i,j] behind a single lenslet
+# camPixRays generates a square list that holds values (in radian) for azimuth and tilt angles in object space for rays originating in camera pixels [i,j] behind a single lenslet
 # The computation implements the sine condition for points in the back focal plane of the objective lens
 def camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA):
     angles=[[0.]*nrCamPix for i in range(nrCamPix)]   #creates a square list with nrCamPix * nrCamPix elements, each set to 0
@@ -56,3 +58,14 @@ print(rayExitFace)
 print(len(camPix))
 print(camPix)
 
+'''
+list_of_lists = [[["1,1,1","1,1,2","1,1,3"],["1,2,1","1,2,2","1,2,3"],["1,3,1","1,3,2","1,3,3"]],
+                 [["2,1,1","2,1,2","2,1,3"],["2,2,1","2,2,2","2,2,3"],["2,3,1","2,3,2","2,3,3"]],
+                 [["3,1,1","3,1,2","3,1,3"],["3,2,1","3,2,2","3,2,3"],["3,3,1","3,3,2","3,3,3"]]]
+
+np_array = np.array(list_of_lists)
+array_transposed = np.transpose(np_array)
+
+print(np_array)
+print("\n--------------\n\n",array_transposed)
+'''
