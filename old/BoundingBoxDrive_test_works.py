@@ -77,7 +77,7 @@ def loadGUV1():
     return np.array(array)
 
 
-array = loadGUV1()
+# array = loadGUV1()
 
 """ Test Samples
 Create a 1 voxel sample... at 7,7,7 in 15x15x15 3d array 
@@ -85,18 +85,18 @@ shape = [15,15,15]
 sampleArray = np.zeros(shape)
 sampleArray[8][8][8] = 1.
 """
-'''
+"""
 array = [[[0, 0, 0], [0, 0, 0], [0, 0, 0]],
          [[0, 0, 0], [0, 1, 0], [0, 0, 0]],
          [[0, 0, 0], [0, 0, 0], [0, 0, 0]]]
-'''
-'''
+"""
+
 array = [
     [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
     [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]],
     [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]],
     [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]]
-'''
+
 sampleArray = np.array(array)
 
 """
@@ -106,8 +106,9 @@ plt.show()
 """
 
 # Bounding Box of Sample, displaced ======================================================================
-boundingBoxDim = [25.95, 25.95, 25.95]
+# boundingBoxDim = [25.95, 25.95, 25.95]
 # boundingBoxDim = [5.1899999999999995, 5.1899999999999995, 5.1899999999999995]
+boundingBoxDim = [10,10,10]
 print("BoundingBoxDim: ", boundingBoxDim)
 
 ''' displace = {0 voxPitch, 0 voxPitch, 0 voxPitch}; #displacement from voxCtr
@@ -135,7 +136,7 @@ print("BoundingBox displaced = ", voxBox)
 # >>> BoundingBox displaces =  [[65, 80], [195, 210], [195, 210]]
 
 '''Load camRayEntrance ======================================================================='''
-camPix, entrance, exits = camRayEntrance()  # 164 (x,y), (x, y, z) (x, y, z)
+camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
 # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
 
 ''' Rays - Generate midpoints and lengths for the 164 rays... ===================================
@@ -239,39 +240,37 @@ images = []
 start = time.time()
 maxIntensity = 0
 
-ulenses = 16
+ulenses = 7
 bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
+
 for k in range(-ulenses // 2, ulenses // 2):
     for j in range(-ulenses // 2, ulenses // 2):
         yOffset = j * uLensPitch
         zOffset = k * uLensPitch
         offset = [0, yOffset, zOffset]
-        # mP = Map[Function[Plus[#, {0, jj µLensPitch, kk µLensPitch}], mP0[[ii]]]
-        midsOff = []
-        # imgXOffset = j * ulenses
-        # imgYOffset = k * ulenses
-
-        for m in range(len(midpointsList)):
-            for r in range(len(midpointsList[m])):
-                midsOff[r].append(addOffset(midpointsList[m][r], offset))
-        # print(midsOff)
-        """convert the midpoint coordinates into integers, using Ceiling. 
-        The integer coordinates identify the object voxels that are traversed by ray ii. 
-        Reverse and Transpose put the converted midpoints into the column and row order 
-        required to match the convention used for identifying object voxels."""
-        # tmp2 = Ceiling[Transpose[Reverse[Transpose[mP]]]/voxPitch]
-
-        # print("midsOffInt shape, len: ", np.shape(midsOffInt), len(midsOffInt))
         for i in range(len(camPix)):  # 164 rays
             # print(k, j, i, camPix[i][0], camPix[i][1]) #, midpointsList[i], lengthsList[i], end='\n')
-            midsOffCeil = np.ceil(np.array(midsOff[i]) / voxPitch)
+            # mP = Map[Function[Plus[#, {0, jj µLensPitch, kk µLensPitch}], mP0[[ii]]]
+            midsOff = []
+            # imgXOffset = j * ulenses
+            # imgYOffset = k * ulenses
+            for n in range(len(midpointsList[i])):
+                midsOff.append(addOffset(midpointsList[i][n], offset))
+            # print(midsOff)
+            """convert the midpoint coordinates into integers, using Ceiling. 
+            The integer coordinates identify the object voxels that are traversed by ray ii. 
+            Reverse and Transpose put the converted midpoints into the column and row order 
+            required to match the convention used for identifying object voxels."""
+            # tmp2 = Ceiling[Transpose[Reverse[Transpose[mP]]]/voxPitch]
+            midsOffCeil = np.ceil(np.array(midsOff) / voxPitch)
             midsOffInt = np.int_(midsOffCeil)
+            # print("midsOffInt shape, len: ", np.shape(midsOffInt), len(midsOffInt))
             intensity = 0
-            for q in range(len(midsOffInt)):
-                smpValue = paddedArray[midsOffInt[q][0] - 1, midsOffInt[q][1] - 1, midsOffInt[q][2] - 1]
+            for n in range(len(midsOffInt)):
+                smpValue = paddedArray[midsOffInt[n][0] - 1, midsOffInt[n][1] - 1, midsOffInt[n][2] - 1]
                 # print(midsOffInt[n][0]-1, midsOffInt[n][1]-1, midsOffInt[n][2]-1, smpValue, end="   ")
                 if smpValue > 0:
-                    length = lengthsList[i][q]
+                    length = lengthsList[i][n]
                     intensity = intensity + smpValue * length
             if (intensity > maxIntensity): maxIntensity = intensity
             camArray.append([camPix[i][0] - 1, camPix[i][1] - 1, intensity * 10])  # div by 100
@@ -296,7 +295,6 @@ for k in range(-ulenses // 2, ulenses // 2):
             image[int(camArray[i][0]), int(camArray[i][1])] = camArray[i][2]
         images.append(image)
         '''
-
 
 plt.figure("Image ")
         #plt.imshow(image, cmap=plt.cm.hot)

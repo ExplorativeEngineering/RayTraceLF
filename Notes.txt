@@ -79,6 +79,7 @@ Notes:
 -- Directories for data output:
     Data is written to separate directories, depending on the ulenses and voxPitch parameters
     with this pattern:  lfimages/[uLenses]/[voxPitch] (e.g. lfimages/24/0_578)
+
         - LFRTVoxel files are named lfvox_ (e.g. lfvox_24_0_578.npy)
 	    - Light field images (_.plm.tiff) and are named like this: [name]_[parms].plm.tiff
         - Perspective images... [name]_[parms].plm.psv.tiff

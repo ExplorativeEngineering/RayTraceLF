@@ -1,10 +1,11 @@
+import copy
 import numba
+#from sparse import COO
 
 from oldcamray.camRayEntrance import camRayEntrance
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-import tifffile
 import math
 
 # magnification of objective lens
@@ -36,15 +37,12 @@ def getVoxelDims():
     dx = voxPitch
     dy = voxPitch
     dz = voxPitch
-
     def is_odd(a):
         return bool(a - ((a >> 1) << 1))
-
     '''voxNrX is the number of voxels along the x-axis side of the object cube. An
     odd number will put the Center of a voxel in the center of object space
     if even, add 1 
-      If[OddQ[voxNrX = Round[extentOfSpaceX / voxPitch]], , voxNrX = voxNrX + 1];
-    '''
+      If[OddQ[voxNrX = Round[extentOfSpaceX / voxPitch]], , voxNrX = voxNrX + 1];'''
     voxNrX = round(extentOfSpaceX / voxPitch)
     if not is_odd(voxNrX):
         voxNrX = voxNrX + 1
@@ -66,19 +64,42 @@ def getVoxelDims():
 
 
 # Samples for testing... =====================================================================
+def loadSphere2():
+    # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
+    # With GUV1, 15x15x15 ranges from 15 - 37
+    with open('../samples/SolidSphere2Trimmed.txt', 'r') as f: text = f.read()
+    for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
+    array = eval(text)
+    boundingBoxDim = [5.1899999999999995, 5.1899999999999995, 5.1899999999999995]
+    return np.array(array), boundingBoxDim
+
+def loadSphere1():
+    # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
+    # With GUV1, 15x15x15 ranges from 15 - 37
+    with open('../samples/SolidSphere1Trimmed.txt', 'r') as f: text = f.read()
+    for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
+    array = eval(text)
+    boundingBoxDim = [8.65, 8.65, 8.65]
+    return np.array(array), boundingBoxDim
+
 def loadGUV1():
     # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
     # With GUV1, 15x15x15 ranges from 15 - 37
     with open('../samples/GUV1trimmed.txt', 'r') as f: text = f.read()
     for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
     array = eval(text)
-    '''
-    for i in range(len(array)):
-        for j in range(len(array[i])):
-            print(array[i][j], end='\n')
-        print()
-    '''
     boundingBoxDim = [25.95, 25.95, 25.95]
+    return np.array(array), boundingBoxDim
+
+def loadGUV2():
+    # Import sampleGUV1 - the 3-dimensional array that holds the fluorescence density for each voxel.'''
+    # With GUV1, 15x15x15 ranges from 15 - 37
+    #{"GUV center=", {32.005, 32.005, 32.005}, ", GUV radius=", 30.275, ", membrane thick=", 1.73}
+    #{64.01, 64.01, 64.01}
+    with open('../samples/GUV2BTrimmed.txt', 'r') as f: text = f.read()
+    for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
+    array = eval(text)
+    boundingBoxDim = [64.01, 64.01, 64.01]
     return np.array(array), boundingBoxDim
 
 def sample_2by2():
@@ -96,6 +117,23 @@ def sample_1by1():
              [[0, 0, 0], [0, 0, 0], [0, 0, 0]]]
     boundingBoxDim = [5.1899999999999995, 5.1899999999999995, 5.1899999999999995]
     return np.array(array), boundingBoxDim
+
+start = [20, 40, 34]
+end = [25, 50, 87]
+def sample_diagonal(start, end):
+    dx = start[0] - end[0]
+    dy = start[1] - end[1]
+    dz = start[2] - end[2]
+    boundingBoxDim = [dx, dy, dz]
+    array=[]
+    return np.array(array), boundingBoxDim
+
+
+def showSampleCrossSection(sampleArray):
+    # X dim midpoint
+    plt.figure("Sample")
+    plt.imshow(sampleArray[int(sampleArray.shape[0]/2)], cmap=plt.cm.hot)
+    plt.show()
 
 """ Test Samples
 Create a 1 voxel sample... at 7,7,7 in 15x15x15 3d array 
@@ -127,16 +165,11 @@ def getBoundingBox(voxCtr, boundingBoxDim, displace):
     print("BoundingBox displaced = ", voxBox)
     return voxBox
 
-
-
-
-
-
-
 def genSiddon(entrance_, exits_, voxBox_):
     import siddon2
     midpointsList = []
     lengthsList = []
+    longestMidPts = 0
     for i in range(len(entrance_)):
         x1, y1, z1 = entrance_[i][0], entrance_[i][1], entrance_[i][2]
         x2, y2, z2 = exits_[i][0], exits_[i][1], exits_[i][2]
@@ -155,8 +188,11 @@ def genSiddon(entrance_, exits_, voxBox_):
         alist = siddon2.raytrace(*args1)
         midpoints = siddon2.midpoints(*args, alist)
         lengths = siddon2.intersect_length(*args, alist)
+        if len(midpoints) > longestMidPts:
+            longestMidPts = len(midpoints)
         midpointsList.append(midpoints)  # physical coordinates
         lengthsList.append(lengths)
+    print("longestMidPts: ", longestMidPts)
     return np.array(midpointsList), np.array(lengthsList)
 
 
@@ -188,190 +224,206 @@ def padOut(array, newSize):
         so the number of voxels span the whole objects space. In case of voxPitch = 1.73, those are
         145 voxels in X-direction, and 405 voxels in Y- and Z-direction.
         The padding is done in such a way that the object is also moved in the direction given by the displacement vector.
-        ???????????????
-          smpArray = ArrayPad[ sample[[3]],
+        smpArray = ArrayPad[ sample[[3]],
             Reverse[Transpose[(Transpose[voxBoxNrs] - {{0, 0, 0}, {voxNrX, voxNrYZ, voxNrYZ}}) {1, -1}]]];'''
 
     x_start = round((newSize[0] - array.shape[0]) / 2)
     y_start = round((newSize[1] - array.shape[1]) / 2)
     z_start = round((newSize[2] - array.shape[2]) / 2)
-    print("Placement", x_start, x_start + array.shape[0], y_start, y_start + array.shape[1], z_start,
-          z_start + array.shape[2])
+    print("Placement", x_start, x_start + array.shape[0], y_start, y_start + array.shape[1],
+          z_start, z_start + array.shape[2])
     result = np.zeros(newSize)
     result[x_start:x_start + array.shape[0], y_start:y_start + array.shape[1], z_start:z_start + array.shape[2]] = array
+    '''
+    plt.figure()
+    plt.imshow(result[72], cmap=plt.cm.hot)
+    plt.show()
+    '''
     return result
 
-    """
-    plt.figure()
-    plt.imshow(paddedArray[70], cmap=plt.cm.hot)
-    plt.show()
-    #plt.colorbar()
-    """
 
+def generateOffsets(midpointsList_, ulenses):
+    # Z ==================================================================
+    # extract the Z components
+    midsZ= []
+    for n in range(len(midpointsList_)):
+        midsZ.append([])
+        for m in range(len(midpointsList_[n])):
+           midsZ[n].append(midpointsList_[n][m][2])
+    # Generate Offset Z List =================
+    midsOffZ = [[] for i in range(ulenses)]
+    # arr = [[i*j for j in range(5)] for i in range(10)]
+    for l in range(ulenses):
+        offsetZ = (l - ulenses/2) * voxPitch
+        midsOffZ[l] = copy.deepcopy(midsZ)
+        for n in range(len(midsOffZ[l])):
+            for m in range(len(midsOffZ[l][n])):
+                midsOffZ[l][n][m] = math.ceil((midsOffZ[l][n][m] + offsetZ) * voxPitchOver1)
+    # Y ==================================================================
+    # extract the Y components
+    midsY= []
+    for n in range(len(midpointsList_)):
+        midsY.append([])
+        for m in range(len(midpointsList_[n])):
+           midsY[n].append(midpointsList_[n][m][1])
+    # Generate Offset Y List =================
+    midsOffY = [[] for i in range(ulenses)]
+    # arr = [[i*j for j in range(5)] for i in range(10)]
+    for l in range(ulenses):
+        offsetY = (l - ulenses/2) * voxPitch
+        midsOffY[l] = copy.deepcopy(midsY)
+        for n in range(len(midsOffY[l])):
+            for m in range(len(midsOffY[l][n])):
+                midsOffY[l][n][m] = math.ceil((midsOffY[l][n][m] + offsetY) * voxPitchOver1)
+    # X ==================================================================
+    # Generate (not Offset) X List =================
+    midsX= []
+    for n in range(len(midpointsList_)):
+        midsX.append([])
+        for m in range(len(midpointsList_[n])):
+           midsX[n].append(math.ceil(midpointsList_[n][m][0] * voxPitchOver1))
+    return midsX, midsOffY, midsOffZ
 
-
-# @jit
-def addOffset(x, o):
-    return [int(math.ceil((x[0] + o[0])*voxPitchOver1)),
-            int(math.ceil((x[1] + o[1])*voxPitchOver1)),
-            int(math.ceil((x[2] + o[2])*voxPitchOver1))]
-
-def addOffsetZ(x, o):
-    return [x[0],
-            x[1],
-            int(math.ceil((x[2] + o[2])*voxPitchOver1))]
-def addOffsetY(x, o):
-    return [x[0],
-            int(math.ceil((x[1] + o[1])*voxPitchOver1)),
-            x[2]]
-
-# @jit
-
-def genLenslet(offset, camPix, midPointsList__, lengthsList, paddedArray):
-    camArray = []
+# @jit(nopython=True)
+def genLenslet(nZ, nY, camPix, midsX, midsOffY, midsOffZ, lengthsList, paddedArray, bigImage):
     maxIntensity = 0
-    mids = np.array(midPointsList__)
-    # print(k, j, i, camPix[i][0], camPix[i][1]) #, midpointsList[i], lengthsList[i], end='\n')
-    # mP = Map[Function[Plus[#, {0, jj µLensPitch, kk µLensPitch}], mP0[[ii]]]
-    # vectorize... parallel access?
-    # mps = midPointsList__[i]
-    # receives midsZ, now only offset Y
-    for n in range(len(mids[i])):
-        mids[i][n] = addOffsetY(mids[i][n], offset)
-    # mids = midPointsList.copy()
-
-    for i in range(len(camPix)):  # for each of 164 rays
-
-        """convert the midpoint coordinates into integers, using Ceiling. 
-        The integer coordinates identify the object voxels that are traversed by ray ii. 
-        Reverse and Transpose put the converted midpoints into the column and row order 
-        required to match the convention used for identifying object voxels."""
-        # tmp2 = Ceiling[Transpose[Reverse[Transpose[mP]]]/voxPitch]
-        # !! multiply by inverse
-        # print("midsOffInt shape, len: ", np.shape(midsOffInt), len(midsOffInt))
+    for i in range(len(camPix)):  # iterate over the 164 rays
         # ??? ellim. - 1's ???
         intensity = 0
-        for n in range(len(mids[i])):
-            smpValue = paddedArray[mids[i][n][0] - 1, mids[i][n][1] - 1, mids[i][n][2] - 1]
-            # print(midsOffInt[n][0]-1, midsOffInt[n][1]-1, midsOffInt[n][2]-1, smpValue, end="   ")
+        for n in range(len(midsX[i])):
+            smpValue = paddedArray[midsX[i][n] - 1, midsOffY[i][n] - 1, midsOffZ[i][n] - 1]
             if smpValue > 0:
                 length = lengthsList[i][n]
                 intensity = intensity + smpValue * length
         if intensity > maxIntensity: maxIntensity = intensity
         # !! Write directly to BigImage ?
-        camArray.append([camPix[i][0] - 1, camPix[i][1] - 1, intensity])
-    return  camArray, maxIntensity
+        # imgXoff = int(nZ * 16 + camPix[i][0] - 1)
+        # imgYoff = int(nY * 16 + camPix[i][1] - 1)
+        imgXoff = int(nZ * 16 + camPix[i][0] - 1)
+        imgYoff = int(nY * 16 + camPix[i][1] - 1)
+        bigImage[imgXoff, imgYoff] = intensity
 
-'''
-    def genLenslet(offset, camPix, midpointsList, lengthsList, paddedArray):
-        camArray = []
-        maxIntensity = 0
-        for i in range(len(camPix)):  # 164 rays
-            # print(k, j, i, camPix[i][0], camPix[i][1]) #, midpointsList[i], lengthsList[i], end='\n')
-            # mP = Map[Function[Plus[#, {0, jj µLensPitch, kk µLensPitch}], mP0[[ii]]]
-            midsOff = []
-            # vectorize... parallel access?
-            for n in range(len(midpointsList[i])):
-                midsOff.append(addOffset(midpointsList[i][n], offset))
-            """convert the midpoint coordinates into integers, using Ceiling. 
-            The integer coordinates identify the object voxels that are traversed by ray ii. 
-            Reverse and Transpose put the converted midpoints into the column and row order 
-            required to match the convention used for identifying object voxels."""
-            # tmp2 = Ceiling[Transpose[Reverse[Transpose[mP]]]/voxPitch]
-            # !! multiply by inverse
-            midsOffCeil = np.ceil(np.array(midsOff) * voxPitchOver1)
-            midsOffInt = np.int_(midsOffCeil)
-            # print("midsOffInt shape, len: ", np.shape(midsOffInt), len(midsOffInt))
-            # ??? ellim. - 1's ???
-            intensity = 0
-            for n in range(len(midsOffInt)):
-                smpValue = paddedArray[midsOffInt[n][0] - 1, midsOffInt[n][1] - 1, midsOffInt[n][2] - 1]
-                # print(midsOffInt[n][0]-1, midsOffInt[n][1]-1, midsOffInt[n][2]-1, smpValue, end="   ")
-                if smpValue > 0:
-                    length = lengthsList[i][n]
-                    intensity = intensity + smpValue * length
-            if intensity > maxIntensity: maxIntensity = intensity
-            camArray.append([camPix[i][0] - 1, camPix[i][1] - 1, intensity * 10])
-        return camArray, maxIntensity
-'''
-        # print()
-        # print([camPix[i][0]-1, camPix[i][1]-1, intensity/100])
-        # camArray[[rayEnterCamPix[[ii, 1]], rayEnterCamPix[[ii, 2]]]] =
-        #   Plus @@ (Extract[smpArray, tmp2] Reverse[iL[[ii]]])
-        #   or Apply[Plus, Extract[smpArray, tmp2] Reverse[iL[[ii]]]]
+    return  maxIntensity
 
 # @jit(nopython=True)
 # @jit
-def genLightField(ulenses, camPix, midpointsList_, lengthsList, paddedArray):
-
+def genLightField(ulenses, camPix, midsX, midsOffY, midsOffZ, lengthsList, paddedArray):
     # Generate Light field image array
     maxMaxIntensity = 0
-    bigImage = np.zeros((16 * ulenses, 16 * ulenses)) # , dtype='uint16')
+    bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
     for k in range(-ulenses // 2, ulenses // 2):
-        zOffset = k * voxPitch
-        imgXoff = int(k + ulenses / 2) * 16
-        # !! do zOffset on midpointsList
-        # midsZ =
+        nZ = int(k + ulenses // 2)
         for j in range(-ulenses // 2, ulenses // 2):
-            yOffset = j * voxPitch
-            offset = [0, yOffset, zOffset]
-            # pass copy of midsZ
-            camArray, maxIntensity = genLenslet(offset, camPix, midpointsList_, lengthsList, paddedArray)
+            nY = int(j + ulenses // 2)
+            maxIntensity = genLenslet(nZ, nY, camPix, midsX, midsOffY[nY], midsOffZ[nZ], lengthsList, paddedArray, bigImage)
             if maxIntensity > maxMaxIntensity: maxMaxIntensity = maxIntensity
-            # ?? mapToLfImage(k, j, camArray)
-            imgYoff = int(j + ulenses / 2) * 16 # coords of placement of camArray in bigImage
-            # print("k, j, xOff, yOff : %3d %3d    %d %d" % (k, j, xOff, yOff))
-            for i in range(len(camArray)):  # 164 rays
-                bigImage[imgXoff + int(camArray[i][0]),
-                         imgYoff + int(camArray[i][1])] = camArray[i][2]
-                print(k, j, yOffset, zOffset, imgXoff + int(camArray[i][0]),  imgYoff + int(camArray[i][1]), camArray[i][2])
 
     return bigImage, maxMaxIntensity
 
 
-def showSampleCrossSection(sampleArray):
-    # X dim midpoint
-    plt.figure("Sample")
-    plt.imshow(sampleArray[int(sampleArray.shape[0]/2)], cmap=plt.cm.hot)
-    plt.show()
-
-
 # Main test
+def genLightFieldVoxels(ulenses, camPix, midsX, midsOffY, midsOffZ, lengthsList, array, voxBox_):
+    print(voxBox_[0][0], voxBox_[0][1], voxBox_[1][0], voxBox_[1][1], voxBox_[2][0], voxBox_[2][1])
+    number_of_rays = ulenses * ulenses * len(camPix)
+    print("number_of_rays:", number_of_rays)
+    # [ulenses,ulenses,len(camPix)] each containing [length, alt, azim]
+    for x in range(voxBox_[0][0], voxBox_[0][1]):
+        for y in range(voxBox_[1][0], voxBox_[1][1]):
+            for z in range(voxBox_[2][0], voxBox_[2][1]):
+                #print (x, y, z)
+                pass
+                #np.where(midsOffY[nY][i][n])
+
+                # i is the ray
+                # for each voxel, a list of the rays that pass thru it and their lengths
+                #print("ray: ", midsX[i][n] - 1, midsOffY[nY][i][n] - 1, midsOffZ[nZ][i][n] - 1, ": ",
+                # lengthsList[i][n], "  pix: ",  camPix[i])
+    # Generate Light field image array
+    #maxMaxIntensity = 0
+    bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
+    #array.nonzero()
+
+    for k in range(-ulenses // 2, ulenses // 2):
+        nZ = int(k + ulenses // 2)
+        for j in range(-ulenses // 2, ulenses // 2):
+            nY = int(j + ulenses // 2)
+            #maxIntensity = genLenslet(nZ, nY, camPix, midsX, midsOffY[nY], midsOffZ[nZ], lengthsList, paddedArray, bigImage)
+            for i in range(len(camPix)):  # iterate over the 164 rays
+                # ??? ellim. - 1's ???
+                intensity = 0
+                for n in range(len(midsX[i])):
+                    if midsX[i][n] - 1 == 73 and midsOffY[nY][i][n] - 1 == 202 and midsOffZ[nZ][i][n] - 1 == 202:
+                        print("ray: ", midsX[i][n] - 1, midsOffY[nY][i][n] - 1, midsOffZ[nZ][i][n] - 1,
+                              ": ", lengthsList[i][n], "  pix: ", i, camPix[i], nY, nZ)
+
+
+
+
+        """
+
+                imgXoff = int(nZ * 16 + camPix[i][0] - 1)
+                imgYoff = int(nY * 16 + camPix[i][1] - 1)
+                bigImage[imgXoff, imgYoff] = intensity
+        """
+    return bigImage
+
+
 def main():
     print("Numba version:", numba.__version__)
-
+    # number of microlenses
     ulenses = 8
+    print("ulenses: ", ulenses)
+    print("Sample: GUV2 ")
+    # Sample ================================
+    # GUV2
+    # array, boundingBoxDim = loadGUV2()
+
     # Voxel space
     voxCtr, voxNrX, voxNrYZ = getVoxelDims()
-    # Full working space  boundingBoxDim = [extentOfSpaceX, extentOfSpaceYZ, extentOfSpaceYZ]
-    # Sample
-    # array, boundingBoxDim = loadGUV1()
-    array, boundingBoxDim = sample_1by1()
+    # for full working space
+    # array = []
+    # boundingBoxDim = [extentOfSpaceX, extentOfSpaceYZ, extentOfSpaceYZ]
+    array, boundingBoxDim = sample_2by2()
     # showSampleCrossSection(array)
     print("BoundingBoxDim: ", boundingBoxDim)
-    #paddedArray = padOut(array, [voxNrX, voxNrYZ, voxNrYZ])
-    #print("paddedArray shape: ", paddedArray.shape)
+
     displace = [0, 0, 0]
     voxBox = getBoundingBox(voxCtr, boundingBoxDim, displace)
     '''Load camRayEntrance '''
     camPix, entrance, exits = camRayEntrance()  # 164 (x,y), (x, y, z) (x, y, z)
     # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
     ''' Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions '''
-    midpointsList, lengthsList = genSiddon(entrance, exits, voxBox)
-
-    showMidPointsAndLengths(camPix, midpointsList, lengthsList)
-    exit(0)
     start = time.time()
-    lfImage, maxIntensity = genLightField(ulenses, camPix, midpointsList, lengthsList, paddedArray)
-    print("maxIntensity:", maxIntensity)
-    # display light field image
+    midpointsList, lengthsList = genSiddon(entrance, exits, voxBox)
+    end = time.time()
+    print("Siddon = %s sec" % (end - start))
+    start = time.time()
+    # showMidPointsAndLengths(camPix, midpointsList, lengthsList)
+    midsX, midsOffY, midsOffZ = generateOffsets(midpointsList,ulenses)
+    # print("midsX:", sizeOf.total_size(midsX))
+    # print("midsOffY:", sizeOf.total_size(midsOffY))
+    # print("midsOffZ:", sizeOf.total_size(midsOffZ))
+    end = time.time()
+    print("generateOffsets = %s sec" % (end - start))
+    # =============================================================================
+    # Voxel-Driven
+    lfImage = genLightFieldVoxels(ulenses, camPix, midsX, midsOffY, midsOffZ, lengthsList, array, voxBox)
+    # =============================================================================
+    # Ray-Driven
+    """
+    paddedArray = padOut(array, [voxNrX, voxNrYZ, voxNrYZ])
+    start = time.time()
+    lfImage, maxIntensity = genLightField(ulenses, camPix, midsX, midsOffY, midsOffZ, lengthsList, paddedArray)
+    end = time.time()
+    # =============================================================================
+    print("generateLightField = %s sec" % (end - start))
+    #print("maxIntensity:", maxIntensity)
+        # display light field image
     plt.figure("Image ")
     plt.imshow(lfImage, cmap=plt.cm.gray, vmin=0, vmax=maxIntensity)  # unit = 65535/maxIntensity
     plt.show()
-    end = time.time()
-    print("Calculation = %s" % (end - start))
-
     tifffile.imsave('lfImage.tiff', lfImage)
+    """
 
 
 if __name__ == "__main__":

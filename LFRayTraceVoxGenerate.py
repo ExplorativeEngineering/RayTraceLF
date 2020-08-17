@@ -322,8 +322,8 @@ if __name__ == "__main__":
             #     entrance, exits,
             #     workingBox)
             # save to disk ============================================
-            parameters, path, lfvox_filename = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
-            saveLightFieldVoxelRaySpace(path + "lfvox_" + parameters, voxel)
+            parameters, imagepath, lfvoxpath = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
+            saveLightFieldVoxelRaySpace(lfvoxpath + "lfvox_" + parameters, voxel)
                 # LightFieldVoxelRaySpace voxel files are saved in the directory corresponding to its parameters
             print('    Saved LightFieldVoxelRaySpace to: ', parameters)
             # TODO Diagnostic

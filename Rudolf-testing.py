@@ -1,6 +1,4 @@
-from siddon2 import midpoints, intersect_length, raytrace
-from camRayEntrance import camRayEntrance
-import matplotlib.pyplot as plt
+from oldcamray.camRayEntrance import camRayEntrance
 import numpy as np
 
 # magnification of objective lens

@@ -9,7 +9,7 @@ import numpy as np
 # Make uLensPitch/voxPitch an odd integer
 # possible values for voxPitch: 3, 1, 1/3, 1/5 of 26/15 (uLensPitch)
 #voxPitches = [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
-voxPitches = [(26 / 15), (26 / 15) / 3]
+voxPitches = [(26 / 15)]
 # ulenseses a list of # of uLenses
 # ulenseses = [8, 16, 32, 64, 115]
 # ulenseses = [9, 25, 49, 81, 115]
@@ -104,17 +104,23 @@ length_div = 6000
 
 #============================================================================================
 #parameters, path, lfvox_filename = file_strings(ulenses, voxPitch)
+imagedir = "lfimages"
+lfvoxdir = "lfrtvox"
+
 def file_strings(ulenses, voxPitch):
     # for naming of output files
     parameters = str(ulenses) + '_' + "{:3.3f}".format(voxPitch).replace('.', '_')
     # print('parameters: ', parameters)
     #  Images with different parameters are saved to separate directories
-    path = "lfimages/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
+    # path = "lfimages/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
+    imagepath = imagedir + "/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
+    lfvoxpath = lfvoxdir + "/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
     # print('data file path: ', path)
     # create directory for outputs with this set of parameters
-    Path(path).mkdir(parents=True, exist_ok=True)
-    lfvox_filename = "lfvox/lfvox_" + parameters
-    return parameters, path, lfvox_filename
+    Path(imagepath).mkdir(parents=True, exist_ok=True)
+    Path(lfvoxpath).mkdir(parents=True, exist_ok=True)
+    #lfvox_filename = "lfvox/lfvox_" + parameters
+    return parameters, imagepath, lfvoxpath
 
 def formatList(l):
     return "["+", ".join(["%.3f" % x for x in l])+"]"

@@ -232,8 +232,10 @@ def generatePerspectiveImages(lfImage_):
     return psvImage
 
 
+sampledir = "samples"
+
 def loadSample(name):
-    with open('samples/' + name + '.txt', 'r') as f: text = f.read()
+    with open(sampledir + '/' + name + '.txt', 'r') as f: text = f.read()
     for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
     array = eval(text)
     return np.array(array)
@@ -310,7 +312,6 @@ def runProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
 #print("max_length:", max_length)
 
 # For multiprocessing...======================================================
-
 # LFImage is read/write shared array, ushort
 # LFImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
 #
@@ -318,16 +319,14 @@ def runProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
 # # voxels[x,y,z][nRays]
 # multiprocessing.RawArray()
 # voxel = np.empty([obj_voxNrX, obj_voxNrYZ, obj_voxNrYZ], dtype='object')
-
 # camPix = []
 # anglesList = multiprocessing.Array('d',100)
-
 
 voxel = None
 
 if __name__ == "__main__":
     # import sys
-    # sys.stdout = open('outputProj.txt', 'wt')
+    # sys.stdout = open('outputProj.txt', 'wt') # redirect print() output to file
     for ulenses in LFRayTraceVoxParams.ulenseses:
         for voxPitch in LFRayTraceVoxParams.voxPitches:
             print("Running Projections with ulenses: ", ulenses, "  voxPitch: ", voxPitch)
@@ -346,12 +345,12 @@ if __name__ == "__main__":
             workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
             del rayEntrFace
             del rayExitFace
-            parameters, path, lfvox_filename = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
-            print("    Loading "+ path + "lfvox_" + parameters)
-            voxel = loadLightFieldVoxelRaySpace(path + "lfvox_" + parameters)
+            parameters, imagepath, lfvoxpath = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
+            print("    Loading "+ lfvoxpath + "lfvox_" + parameters)
+            voxel = loadLightFieldVoxelRaySpace(lfvoxpath + "lfvox_" + parameters)
             # showRaysInVoxels(voxel)
             print("    Running projections...(image size: ", ulenses * 16, ")")
             workingDimX = workingBox[0][1] - workingBox[0][0]
             workingDimYZ = workingBox[1][1] - workingBox[1][0]
-            runProjections(workingDimX, workingDimYZ, ulenses, camPix, angles, path)
+            runProjections(workingDimX, workingDimYZ, ulenses, camPix, angles, imagepath)
     print("All done.")
