@@ -9,7 +9,7 @@ import LFRayTraceVoxParams
 
 from LFRayTraceVoxSpace import getVoxelDims, getWorkingDims
 # TODO
-from camRayEntrance import camRayEntrance
+#from camRayEntrance import camRayEntrance
 from utils import timer, sizeOf
 
 # ==================================================================================
@@ -179,6 +179,9 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
                         #       workingBox[2][0]
                         #       )
                         # add this ray in EX space to list of rays for the corresponding voxel coord in working space
+                        # x, y, z = int(midsX[nRay][midpt] - workingBox[0][0]), \
+                        #           int(midsOffY[nY][nRay][midpt] - workingBox[1][0]), \
+                        #           int(midsOffZ[nZ][nRay][midpt] - workingBox[2][0])
                         x, y, z = int(midsX[nRay][midpt] - workingBox[0][0]-1), \
                                   int(midsOffY[nY][nRay][midpt] - workingBox[1][0]-1), \
                                   int(midsOffZ[nZ][nRay][midpt] - workingBox[2][0]-1)
@@ -283,20 +286,22 @@ if __name__ == "__main__":
             print("   EX space specified: (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, "microns )")
             print("   EX space, voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
                   "  size: ", voxNrX, voxNrYZ, voxNrYZ)
-            camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
-            # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
-            anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits)
+            # camPix, entrance, exits, angles = camRayCoord(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
+            # # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
+            # anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits) # ????
+            angles = LFRayTraceVoxParams.getAngles()
+            camPix, rayEntrFace, rayExitFace = LFRayTraceVoxParams.camRayCoord(voxCtr, angles)
             workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
-            print("Siddon Calcs...")
+            print("     Siddon Calcs...")
             # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
-            midpointsList, lengthsList = genMidPtsLengthswithSiddon(entrance, exits, workingBox, voxPitch)
-            print("   len(midpointsList)   :", len(midpointsList))
+            midpointsList, lengthsList = genMidPtsLengthswithSiddon(rayEntrFace, rayExitFace, workingBox, voxPitch)
+            print("     len(midpointsList)   :", len(midpointsList))
             # print("   max(lengthsList)     :", max(lengthsList))
-            print("   max(max(lengthsList)), longest length:", max(max(lengthsList)))
+            print("     max(max(lengthsList)), longest length:", max(max(lengthsList)))
             # showMidPointsAndLengths(camPix, midpointsList, lengthsList)
             # given uLenses, gen offsets
 
-            print("Offsets...")
+            print("    Offsets...")
             midsX, midsOffY, midsOffZ = generateYZOffsets(midpointsList, ulenses, LFRayTraceVoxParams.uLensPitch, voxPitch)
             print("    midsX   :", len(midsX))
             print("    midsOffY:", len(midsOffY))
@@ -307,7 +312,7 @@ if __name__ == "__main__":
             voxel = genLightFieldVoxels(workingBox, ulenses, camPix,
                                         midsX, midsOffY, midsOffZ,
                                         lengthsList,
-                                        anglesList)
+                                        angles)
             timer.endTime("        genLightFieldVoxels")
             # Create LightFieldVoxelRaySpace
             # voxel = generateLightFieldVoxelRaySpace(

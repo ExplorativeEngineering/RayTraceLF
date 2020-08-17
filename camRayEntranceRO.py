@@ -20,18 +20,24 @@ def camRayCoord(voxCtr):
     camPix = []
     rayEntrFace = []
     rayExitFace = []
+    angles = []
     for i in range(len(rays)):
         for j in range(len(rays[i])):
-            if rays[i][j]!=0 :
-                camPix.append([i,j])
-                tmp=[voxCtr[0]*np.tan(rays[i][j][1]*np.pi/180)*np.sin(rays[i][j][0]*np.pi/180),
-                     voxCtr[0]*np.tan(rays[i][j][1]*np.pi/180)*np.cos(rays[i][j][0]*np.pi/180)]
-                rayEntrFace.append([0,voxCtr[1]+tmp[0],voxCtr[2]+tmp[1]])
-                rayExitFace.append([2*voxCtr[0],voxCtr[1]-tmp[0],voxCtr[2]-tmp[1]])
-    return camPix,rayEntrFace,rayExitFace
+            if rays[i][j] != 0:
+                camPix.append([i + 1, j + 1])
+                # try add one here
+                tmp = [voxCtr[0] * np.tan(rays[i][j][1] * np.pi / 180) * np.sin(rays[i][j][0] * np.pi / 180),
+                       voxCtr[0] * np.tan(rays[i][j][1] * np.pi / 180) * np.cos(rays[i][j][0] * np.pi / 180)]
+                rayEntrFace.append([0, voxCtr[1] + tmp[0], voxCtr[2] + tmp[1]])
+                rayExitFace.append([2 * voxCtr[0], voxCtr[1] - tmp[0], voxCtr[2] - tmp[1]])
+                angles.append([rays[i][j][0], rays[i][j][1]])
+    return camPix, rayEntrFace, rayExitFace, angles
 
-camPix,rayEntrFace,rayExitFace = camRayCoord(voxCtr)
+camPix,rayEntrFace,rayExitFace, angles = camRayCoord(voxCtr)
+
 print(voxCtr)
+print()
+print(angles)
 print(len(rayEntrFace))
 print(rayEntrFace)
 print(len(rayExitFace))

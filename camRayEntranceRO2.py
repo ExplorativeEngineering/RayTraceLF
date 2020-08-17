@@ -19,10 +19,12 @@ uLensCtr = [8.,8.]  #the µLens center is at the pixel border between 8th and 9t
 
 voxCtr = (377/3,351.,351.)
 
-# camPixRays generates a square list that holds values (in radian) for azimuth and tilt angles in object space for rays originating in camera pixels [i,j] behind a single lenslet
+# camPixRays generates a square list that holds values (in radian) for azimuth and tilt angles
+# in object space for rays originating in camera pixels [i,j] behind a single lenslet
 # The computation implements the sine condition for points in the back focal plane of the objective lens
 def camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA):
-    angles=[[0.]*nrCamPix for i in range(nrCamPix)]   #creates a square list with nrCamPix * nrCamPix elements, each set to 0
+    angles=[[0.]*nrCamPix for i in range(nrCamPix)]
+    #creates a square list with nrCamPix * nrCamPix elements, each set to 0
     for i in range(nrCamPix):
         for j in range(nrCamPix):
             tmp = np.sqrt((i+0.5-uLensCtr[0])**2 + (j+0.5-uLensCtr[1])**2)
@@ -31,7 +33,8 @@ def camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA):
     return angles
 
 # camRayCoord(voxCtr,angles) generates three arrays: camPix, rayEntrFace, rayExitFace.
-# camRayCoord(voxCtr,angles) accepts any voxCtr and generates the correct ray coordinates in the entrance and exit face associated with voxCtr
+# camRayCoord(voxCtr,angles) accepts any voxCtr and generates the correct ray coordinates
+# in the entrance and exit face associated with voxCtr
 def camRayCoord(voxCtr,angles):
     camPix = []
     rayEntrFace = []
@@ -45,6 +48,7 @@ def camRayCoord(voxCtr,angles):
                 rayEntrFace.append([0,voxCtr[1]+tmp[0],voxCtr[2]+tmp[1]])
                 rayExitFace.append([2*voxCtr[0],voxCtr[1]-tmp[0],voxCtr[2]-tmp[1]])
     return camPix,rayEntrFace,rayExitFace
+
 
 # print for testing
 angles=camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA)

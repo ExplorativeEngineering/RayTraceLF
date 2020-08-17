@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import LFRayTraceVoxParams
 from LFRayTraceVoxSpace import getVoxelDims
+from camRayEntranceRO import camRayCoord
 
 """
 July 30 or so...
@@ -47,39 +48,39 @@ with {i, j} enters object space."""
 
 
 
-def camRayEntrance(voxCtr):
-    # imports camRayEntrance and camPix from file
-    rays = []
-    with open('camRayEntrance26Div15.txt', 'r') as f:
-        for s in f:
-            # s = '{{2., 6.}, {0., 269.23612015234846, 139.08124584061335}}'
-            for rep in (('{', '['), ('}', ']')): s = s.replace(rep[0], rep[1])
-            x = eval(s)
-            rays.append(x)
-
-    camPix = []
-    entrance = []
-    exit = []
-    for i in range(len(rays)):
-        camPix.append(rays[i][0])
-        entrance.append(rays[i][1])
-        # ray[i][1][0] is zero
-        # ex = [rays[i][1][0] + 2 * voxCtr[0],
-        #        rays[i][1][1] + 2 * (voxCtr[1] - rays[i][1][1]),
-        #        rays[i][1][2] + 2 * (voxCtr[2] - rays[i][1][2])]
-        ex = [2 * voxCtr[0],
-              2 * voxCtr[1] - rays[i][1][1],
-              2 * voxCtr[2] - rays[i][1][2]]
-            # x = 2 * voxCtr[[1]], where voxCtr[[1]] is the x-component of voxCtr.
-            # y and z, 2 * voxCtr[[2]] - y{I,j} and 2 * voxCtr[[3]] - z{I,j}, respectively.
-        exit.append(ex)
+# def camRayEntrance(voxCtr):
+#     # imports camRayEntrance and camPix from file
+#     rays = []
+#     with open('camRayEntrance26Div15.txt', 'r') as f:
+#         for s in f:
+#             # s = '{{2., 6.}, {0., 269.23612015234846, 139.08124584061335}}'
+#             for rep in (('{', '['), ('}', ']')): s = s.replace(rep[0], rep[1])
+#             x = eval(s)
+#             rays.append(x)
+#
+#     camPix = []
+#     entrance = []
+#     exit = []
+#     for i in range(len(rays)):
+#         camPix.append(rays[i][0])
+#         entrance.append(rays[i][1])
+#         # ray[i][1][0] is zero
+#         # ex = [rays[i][1][0] + 2 * voxCtr[0],
+#         #        rays[i][1][1] + 2 * (voxCtr[1] - rays[i][1][1]),
+#         #        rays[i][1][2] + 2 * (voxCtr[2] - rays[i][1][2])]
+#         ex = [2 * voxCtr[0],
+#               2 * voxCtr[1] - rays[i][1][1],
+#               2 * voxCtr[2] - rays[i][1][2]]
+#             # x = 2 * voxCtr[[1]], where voxCtr[[1]] is the x-component of voxCtr.
+#             # y and z, 2 * voxCtr[[2]] - y{I,j} and 2 * voxCtr[[3]] - z{I,j}, respectively.
+#         exit.append(ex)
         # TODO
     # print("CamPix, Entrance, Exit =========================== ")
     # for i in range(len(rays)):
     #     print(camPix[i], entrance[i], exit[i], end=" ")
     #     print()
     # print("end.")
-    return camPix, entrance, exit
+    # return camPix, entrance, exit
 
 
     # TODO add angles here (as unit vectors, (x,y,z)
@@ -103,10 +104,10 @@ if __name__ == '__main__':
     print("    voxCtr, voxNrX, voxNrYZ: ", LFRayTraceVoxParams.formatList(voxCtr), voxNrX, voxNrYZ, "  extent(",
           LFRayTraceVoxParams.entranceExitX,
           LFRayTraceVoxParams.entranceExitYZ, "microns )")
-    camPix, entrance, exits = camRayEntrance(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
+    camPix, rayEntrFace, rayExitFace = camRayCoord(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
     # Diagnostic...
     # Plot Entrance --------------------------
-    ent = np.array(entrance)
+    ent = np.array(rayEntrFace)
     y = ent[:, [1]]
     z = ent[:, [2]]
     #colors = (0, 0, 0)
@@ -120,7 +121,7 @@ if __name__ == '__main__':
     plt.ylabel('z')
     plt.show()
     # Plot Exit --------------------------
-    exi = np.array(exits)
+    exi = np.array(rayExitFace)
     y = exi[:, [1]]
     z = exi[:, [2]]
     #colors = (0, 0, 0)
@@ -148,6 +149,13 @@ if __name__ == '__main__':
     plt.ylabel('z')
     plt.show()
     print()
+    print(voxCtr)
+    print(len(rayEntrFace))
+    print(rayEntrFace)
+    print(len(rayExitFace))
+    print(rayExitFace)
+    print(len(camPix))
+    print(camPix)
 
 """
 prints

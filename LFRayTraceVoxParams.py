@@ -1,6 +1,7 @@
 import multiprocessing
 import math
 from pathlib import Path
+import numpy as np
 
 # ==== INPUTS ==================================================
 # voxPitch is the side length in microns of a cubic voxel in object space;
@@ -8,13 +9,13 @@ from pathlib import Path
 # Make uLensPitch/voxPitch an odd integer
 # possible values for voxPitch: 3, 1, 1/3, 1/5 of 26/15 (uLensPitch)
 #voxPitches = [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
-voxPitches = [(26 / 15)]
+voxPitches = [(26 / 15), (26 / 15) / 3]
+# ulenseses a list of # of uLenses
 # ulenseses = [8, 16, 32, 64, 115]
 # ulenseses = [9, 25, 49, 81, 115]
 ulenseses = [65]
 
 # ===================================
-# ?
 displace = [0, 0, 0]
 # Entrance, Exit planes are 700 x 700, 250 apart (um)
 entranceExitX = 250  # microns
@@ -24,25 +25,59 @@ workingSpaceX = 100  # 100 microns
 
 # Optical System Parameters ==============================================================
 magnObj = 60  # magnification of objective lens
-naObj = 1.2  # naObj is NA of objective lens
-nMedium = 1.33  # Medium is the refractive index of the medium in object space
-nrCamPix = 16  # 16 x 16 pixels
-    # nrCamPix is the number of camera pixels behind a lenslet in the horizontal and vertical direction
-    # ≤ i ≤ nrCamPix and 0 ≤ j ≤ nrCamPix span the plane of camera pixels, with {i,j} Reals
-    # Integers {i,j} count the pixels. {0.5,0.5} is the center location of pixel {1,1}
-uLensCtr = {8, 8}  # microLens center position in camera pixels
-camPixPitch = 6.5  # size of camera pixels in micron
-    # Sensor Pixels = 2048 x 2048 ... (2048 * 6.5 um) / 100 um    133.12
-# uLensPitch - µLens pitch in object space.  100 um diameter ulens
-# uLens pitch = 1.7333.. or (26/15) microns in object space when using 60x objective lens.
-# uLensPitch = (16 pix * 6.5 micron= pix=104 micron/ulens) / 60 = 1.73... microns/ulens in obj space
+nMedium = 1.33      # refractive index of object medium
+naObj = 1.2         # NA of objective lens; for naObj=1.2 (water imm. objective), the tilt angle of ray passing
+                    # through edge of aperture is arcSin(1.2/1.33)=64°
+rNA = 7.7           # radius of NA in aperture plane behind microlens in fraction of camera pixels;
+                    # rNA=7.7 is the measured aperture disc radius for the water imm.
+                    # objective lens, a 100µm uLens diameter and 6.5 µm camPix pitch (Orca Flash4)
+nrCamPix = 16       # nrCamPix is the number of camera pixels behind a lenslet in the horizontal and vertical direction
+                    # 0<=i<=nrCamPix and 0<=j<=nrCamPix span the plane of camera pixels, with i,j Reals
+                    # integers [i,j] are the pixel count, with i and j starting at 0 and ending at nrCampix-1;
+                    # [0.5,0.5] is the center location of the first pixel [0,0]
+uLensCtr = [8.,8.]  # the µLens center is at the pixel border between 8th and 9th pixel, horizontally and vertically
+
+camPixPitch = 6.5   # size of camera pixels in micron
+                    # Sensor Pixels = 2048 x 2048 ... (2048 * 6.5 um) / 100 um    133.12
+# uLensPitch - µLens pitch in object space.  100 um diameter ulens.
+#   uLens pitch = 1.7333.. or (26/15) microns in object space when using 60x objective lens.
+#   uLensPitch = (16 pix * 6.5 micron= pix=104 micron/ulens) / 60 = 1.73... microns/ulens in obj space
 uLensPitch = nrCamPix * camPixPitch / magnObj
 print("uLensPitch:", uLensPitch)
-# TODO For different optical configurations, we need a camRayEntrance array for each.
-# opticalConfig:  60x, 1.2 NA  and  20x ? NA
 
 
-# ================================
+# camPixRays generates a square list that holds values (in radian) for azimuth and tilt angles
+# in object space for rays originating in camera pixels [i,j] behind a single lenslet
+# The computation implements the sine condition for points in the back focal plane of the objective lens
+def camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA):
+    angles=[[0.]*nrCamPix for i in range(nrCamPix)]
+    #creates a square list with nrCamPix * nrCamPix elements, each set to 0
+    for i in range(nrCamPix):
+        for j in range(nrCamPix):
+            tmp = np.sqrt((i+0.5-uLensCtr[0])**2 + (j+0.5-uLensCtr[1])**2)
+            if tmp <= rNA:
+                angles[j][i]=[np.arctan2(i+0.5-uLensCtr[0],j+0.5-uLensCtr[1]),np.arcsin(tmp/rNA*naObj/nMedium)]
+    return angles
+
+def camRayCoord(voxCtr,angles):
+    camPix = []
+    rayEntrFace = []
+    rayExitFace = []
+    for i in range(len(angles)):
+        for j in range(len(angles[i])):
+            if angles[i][j]!=0 :
+                camPix.append([i,j])
+                tmp=[voxCtr[0]*np.tan(angles[i][j][1])*np.sin(angles[i][j][0]),
+                     voxCtr[0]*np.tan(angles[i][j][1])*np.cos(angles[i][j][0])]
+                rayEntrFace.append([0,voxCtr[1]+tmp[0],voxCtr[2]+tmp[1]])
+                rayExitFace.append([2*voxCtr[0],voxCtr[1]-tmp[0],voxCtr[2]-tmp[1]])
+    return camPix,rayEntrFace,rayExitFace
+
+def getAngles():
+    angles=camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA)
+    return angles
+
+# ===================================================================
 # Data Types, Ranges (for encoding)
 # TODO what is maximum accumulated intensity?
 # depends on output image depth
@@ -72,10 +107,10 @@ length_div = 6000
 def file_strings(ulenses, voxPitch):
     # for naming of output files
     parameters = str(ulenses) + '_' + "{:3.3f}".format(voxPitch).replace('.', '_')
-    print('parameters: ', parameters)
+    # print('parameters: ', parameters)
     #  Images with different parameters are saved to separate directories
     path = "lfimages/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
-    print('data file path: ', path)
+    # print('data file path: ', path)
     # create directory for outputs with this set of parameters
     Path(path).mkdir(parents=True, exist_ok=True)
     lfvox_filename = "lfvox/lfvox_" + parameters
