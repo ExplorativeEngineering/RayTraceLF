@@ -3,6 +3,17 @@ Description of algorithm ---
 
 - schematic of process and objects
 
+Changes Aug 18
+
+    LFRayTraceVoxProjection runs projections on all the files in the samples/ folder
+
+    LFRayTraceVoxGenerate.__main__
+        iteratively calls generateLFRTvoxels(ulenses, voxPitch)
+
+    LFRayTraceVoxProjection.__main__
+        iteratively calls projectSamples(ulenses, voxPitch)
+
+
 Anisotropic Projections
 
 Inputting Sample Objects for LFProjection

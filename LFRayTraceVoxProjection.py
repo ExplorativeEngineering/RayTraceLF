@@ -13,13 +13,18 @@ from utils import timer
 # TODO We may also need to specify: voxPitch, ulenses, entranceExitX, entranceExitYZ, objectSpaceX, objectSpaceYZ
 
 def loadLightFieldVoxelRaySpace(filename):
-    voxel = np.load(filename+".npy" , allow_pickle=True)
-    return voxel
+    try:
+        voxel_ = np.load(filename+".npy" , allow_pickle=True)
+    except IOError:
+        print("Failed to load LightFieldVoxelRaySpace: " + filename)
+        return None
+    else:
+        return voxel_
 
 # ==================================================================================
 # Generate LightField Projections
-# ==================================================================================
-# DIAGNOSTIC ===============================
+
+# DIAGNOSTIC
 def showRaysInVoxels(voxel):
     # diagnostic: shows number of rays in each voxel
     print("voxel.shape:", voxel.shape)
@@ -163,15 +168,6 @@ def placeInWorkingSpace(array, workingDims, offsets):
     def is_odd(a):
         return bool(a - ((a >> 1) << 1))
 
-    # if is_odd(ulenses):
-    #     x_start = round((workingDims[0] - array.shape[0]) / 2) + offsets[0]
-    #     y_start = round((workingDims[1] - array.shape[1]) / 2) + offsets[1]
-    #     z_start = round((workingDims[2] - array.shape[2]) / 2) + offsets[2]
-    # else:
-    # x_start = ceil((workingDims[0] - array.shape[0]) / 2) + offsets[0]
-    # y_start = ceil((workingDims[1] - array.shape[1]) / 2) + offsets[1]
-    # z_start = ceil((workingDims[2] - array.shape[2]) / 2) + offsets[2]
-
     x_start = round((workingDims[0] - array.shape[0]) / 2) + offsets[0]
     y_start = round((workingDims[1] - array.shape[1]) / 2) + offsets[1]
     z_start = round((workingDims[2] - array.shape[2]) / 2) + offsets[2]
@@ -207,35 +203,32 @@ def projectArray(array, name, offsets, workingDimX, workingDimYZ, ulenses, camPi
         plt.show()
     filename = path + name + "_" + str(offsets)
     tifffile.imsave(filename + '.plm.tiff', np.flipud(lfImage))
-    psvImage = generatePerspectiveImages(lfImage)
+    psvImage = generatePerspectiveImages(lfImage, ulenses)
     tifffile.imsave(filename + '.plm.psv.tiff', np.flipud(psvImage))
     print('        Generated: ' + filename)
 
 
 # Perspective Images ======================================================================
-
-def generatePerspectiveImages(lfImage_):
+def generatePerspectiveImages(lfImage_, ulenses_):
     # Generates (uLenses x uLenses) array of (16 x 16) perspective images, ushort
-    psvImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
+    psvImage = np.zeros((16 * ulenses_, 16 * ulenses_), dtype='uint16')
     # each subimg is ulense square, calc subImages offsets..
-    for sx in range(ulenses):
-        for sy in range(ulenses):
+    for sx in range(ulenses_):
+        for sy in range(ulenses_):
             for lx in range(16):
                 for ly in range(16):
                     # Lf coord
                     lfX = sx * 16 + lx
                     lfY = sy * 16 + ly
                     # psv coord
-                    psX = lx * ulenses + sx
-                    psY = ly * ulenses + sy
+                    psX = lx * ulenses_ + sx
+                    psY = ly * ulenses_ + sy
                     psvImage[psX][psY] = lfImage_[lfX][lfY]
     return psvImage
 
 
-sampledir = "samples"
-
 def loadSample(name):
-    with open(sampledir + '/' + name + '.txt', 'r') as f: text = f.read()
+    with open(sampledir + '/' + name, 'r') as f: text = f.read()
     for rep in (('{', '['), ('}', ']')): text = text.replace(rep[0], rep[1])
     array = eval(text)
     return np.array(array)
@@ -244,12 +237,25 @@ def projectSample(name, offsets, workingDimX, workingDimYZ, ulenses, camPix, ang
     print("        Projecting: " + name)
     timer.startTime()
     array = loadSample(name)
+    # transpose to correspond to Mathematica coords.
     projectArray(array.transpose(), name, offsets, workingDimX, workingDimYZ, ulenses, camPix, anglesList, path)
     # projectArray(array, name, offsets, workingDimX, workingDimYZ, ulenses, camPix, anglesList, path)
+    timer.endTime("        Projection of " + name)
 
 # Inputs =================================================================================
+sampledir = "samples"
 display_plot = False
-gamma = 1.0  # for matplotlib (not tiff file) images:
+gamma = 1.0  # for display of matplotlib (not tiff file) images
+
+import os
+
+def runAllProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
+    offsets = [0, 0, 0]
+    for files in os.listdir(sampledir):
+        if os.path.isfile(os.path.join(sampledir, files)):
+            print(files)
+            projectSample(files, offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+
 
 def runProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
     offsets = [0, 0, 0]
@@ -286,22 +292,23 @@ def runProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
     offsets = [0, 0, 0]
     projectSample('GUV1trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     # projectSample('GUV2BTrimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('GUV2Testtrimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('GUV2Testtrimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     projectSample('SolidSphere1Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     projectSample('SolidSphere2Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('bundle1_0_0Trimmed',  offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('bundle2_45_45Trimmed',offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('bundle3_0_90Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim135_incl45', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim135_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim90_incl45', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim90_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim45_incl45', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim45_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim0_incl90', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim0_incl45', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle1_azim0_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
-    projectSample('Bundle2_azim0_incl90', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('bundle1_0_0Trimmed',  offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('bundle2_45_45Trimmed',offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('bundle3_0_90Trimmed', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim135_incl45', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim135_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim90_incl45', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim90_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim45_incl45', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim45_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim0_incl90', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim0_incl45', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle1_azim0_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+    # projectSample('Bundle2_azim0_incl90', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
+
 
 # ======================================================================================
 # Main...
@@ -324,33 +331,38 @@ def runProjections(workingDimX, workingDimYZ, ulenses, camPix, angleList, path):
 
 voxel = None
 
+def projectSamples(ulenses, voxPitch):
+    global voxel
+    print("Running Projections with ulenses: ", ulenses, "  voxPitch: ", voxPitch)
+    voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX,
+                                           LFRayTraceVoxParams.entranceExitYZ, voxPitch)
+    print("    EX space specified: (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ,
+          "microns )")
+    print("    EX space, voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
+          "  size: ", voxNrX, voxNrYZ, voxNrYZ)
+    # camPix, entrance, exits, angles = camRayCoord(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
+    # # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
+    # print("    Loading lfvox w/ ulenses, voxPitch: ", ulenses, voxPitch)
+    # anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits)  # ????
+    angles = LFRayTraceVoxParams.getAngles()
+    camPix, rayEntrFace, rayExitFace = LFRayTraceVoxParams.camRayCoord(voxCtr, angles)
+    workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
+    del rayEntrFace
+    del rayExitFace
+    parameters, imagepath, lfvoxpath = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
+    print("    Loading " + lfvoxpath + "lfvox_" + parameters)
+    voxel = loadLightFieldVoxelRaySpace(lfvoxpath + "lfvox_" + parameters)
+    if voxel is not None:
+        # showRaysInVoxels(voxel)
+        print("    Running projections...(image size: ", ulenses * 16, ")")
+        workingDimX = workingBox[0][1] - workingBox[0][0]
+        workingDimYZ = workingBox[1][1] - workingBox[1][0]
+        runAllProjections(workingDimX, workingDimYZ, ulenses, camPix, angles, imagepath)
+
 if __name__ == "__main__":
     # import sys
     # sys.stdout = open('outputProj.txt', 'wt') # redirect print() output to file
-    for ulenses in LFRayTraceVoxParams.ulenseses:
-        for voxPitch in LFRayTraceVoxParams.voxPitches:
-            print("Running Projections with ulenses: ", ulenses, "  voxPitch: ", voxPitch)
-            voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX,
-                                                   LFRayTraceVoxParams.entranceExitYZ, voxPitch)
-            print("    EX space specified: (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ,
-                  "microns )")
-            print("    EX space, voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
-                  "  size: ", voxNrX, voxNrYZ, voxNrYZ)
-            # camPix, entrance, exits, angles = camRayCoord(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
-            # # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
-            # print("    Loading lfvox w/ ulenses, voxPitch: ", ulenses, voxPitch)
-            # anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits)  # ????
-            angles = LFRayTraceVoxParams.getAngles()
-            camPix, rayEntrFace, rayExitFace = LFRayTraceVoxParams.camRayCoord(voxCtr, angles)
-            workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
-            del rayEntrFace
-            del rayExitFace
-            parameters, imagepath, lfvoxpath = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
-            print("    Loading "+ lfvoxpath + "lfvox_" + parameters)
-            voxel = loadLightFieldVoxelRaySpace(lfvoxpath + "lfvox_" + parameters)
-            # showRaysInVoxels(voxel)
-            print("    Running projections...(image size: ", ulenses * 16, ")")
-            workingDimX = workingBox[0][1] - workingBox[0][0]
-            workingDimYZ = workingBox[1][1] - workingBox[1][0]
-            runProjections(workingDimX, workingDimYZ, ulenses, camPix, angles, imagepath)
-    print("All done.")
+    for ulenses_ in LFRayTraceVoxParams.ulenseses:
+        for voxPitch_ in LFRayTraceVoxParams.voxPitches:
+            projectSamples(ulenses_, voxPitch_)
+    print("Completed Projections.")

@@ -239,11 +239,12 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
 
 def saveLightFieldVoxelRaySpace(filename, voxel):
     # Save to file...
+    print("Saving voxels to file: " + filename)
     np.save(filename, voxel)
 
-def loadLightFieldVoxelRaySpace(filename):
-    voxel = np.load(filename+".npy" , allow_pickle=True)
-    return voxel
+# def loadLightFieldVoxelRaySpace(filename):
+#     voxel = np.load(filename+".npy" , allow_pickle=True)
+#     return voxel
 
 # DIAGNOSTIC ===============================
 def showRaysInVoxels(voxel):
@@ -266,6 +267,48 @@ def showRaysInVoxels(voxel):
                             length = unpackedRay[3]
                         #    print(x,y,z,nRay, nZ, nY, length)
 
+
+def generateLFRTvoxels(ulenses, voxPitch):
+    print("Generating lfvox with ulenses: ", ulenses, "  voxPitch: ", voxPitch)
+    voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX,
+                                           LFRayTraceVoxParams.entranceExitYZ, voxPitch)
+    print("   EX space specified: (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, "microns )")
+    print("   EX space, voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
+          "  size: ", voxNrX, voxNrYZ, voxNrYZ)
+    # camPix, entrance, exits, angles = camRayCoord(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
+    # # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
+    # anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits) # ????
+    angles = LFRayTraceVoxParams.getAngles()
+    camPix, rayEntrFace, rayExitFace = LFRayTraceVoxParams.camRayCoord(voxCtr, angles)
+    workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
+    print("     Siddon Calcs...")
+    # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
+    midpointsList, lengthsList = genMidPtsLengthswithSiddon(rayEntrFace, rayExitFace, workingBox, voxPitch)
+    print("     len(midpointsList)   :", len(midpointsList))
+    # print("   max(lengthsList)     :", max(lengthsList))
+    print("     max(max(lengthsList)), longest length:", max(max(lengthsList)))
+    # showMidPointsAndLengths(camPix, midpointsList, lengthsList)
+    # given uLenses, gen offsets
+    print("    Offsets...")
+    midsX, midsOffY, midsOffZ = generateYZOffsets(midpointsList, ulenses, LFRayTraceVoxParams.uLensPitch, voxPitch)
+    print("    midsX   :", len(midsX))
+    print("    midsOffY:", len(midsOffY))
+    print("    midsOffZ:", len(midsOffZ))
+    # print("lengthsList,angleList: ", len(lengthsList), len(anglesList))
+    timer.startTime()
+    voxel = genLightFieldVoxels(workingBox, ulenses, camPix,
+                                midsX, midsOffY, midsOffZ,
+                                lengthsList,
+                                angles)
+    timer.endTime("        genLightFieldVoxels")
+    # save to disk ============================================
+    parameters, imagepath, lfvoxpath = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
+    saveLightFieldVoxelRaySpace(lfvoxpath + "lfvox_" + parameters, voxel)
+    # LightFieldVoxelRaySpace voxel files are saved in the directory corresponding to its parameters
+    print('    Saved LightFieldVoxelRaySpace to: ', parameters)
+    # showRaysInVoxels(voxel) # diagnostic
+    del voxel
+
 # ======================================================================================
 def main():
     pass
@@ -280,54 +323,6 @@ if __name__ == "__main__":
     # sys.stdout = open('outputGen.txt', 'wt')
     for ulenses in LFRayTraceVoxParams.ulenseses:
         for voxPitch in LFRayTraceVoxParams.voxPitches:
-            print("Generating lfvox with ulenses: ", ulenses, "  voxPitch: ", voxPitch)
-            voxCtr, voxNrX, voxNrYZ = getVoxelDims(LFRayTraceVoxParams.entranceExitX,
-                                                   LFRayTraceVoxParams.entranceExitYZ, voxPitch)
-            print("   EX space specified: (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, "microns )")
-            print("   EX space, voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
-                  "  size: ", voxNrX, voxNrYZ, voxNrYZ)
-            # camPix, entrance, exits, angles = camRayCoord(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
-            # # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
-            # anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits) # ????
-            angles = LFRayTraceVoxParams.getAngles()
-            camPix, rayEntrFace, rayExitFace = LFRayTraceVoxParams.camRayCoord(voxCtr, angles)
-            workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
-            print("     Siddon Calcs...")
-            # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
-            midpointsList, lengthsList = genMidPtsLengthswithSiddon(rayEntrFace, rayExitFace, workingBox, voxPitch)
-            print("     len(midpointsList)   :", len(midpointsList))
-            # print("   max(lengthsList)     :", max(lengthsList))
-            print("     max(max(lengthsList)), longest length:", max(max(lengthsList)))
-            # showMidPointsAndLengths(camPix, midpointsList, lengthsList)
-            # given uLenses, gen offsets
-
-            print("    Offsets...")
-            midsX, midsOffY, midsOffZ = generateYZOffsets(midpointsList, ulenses, LFRayTraceVoxParams.uLensPitch, voxPitch)
-            print("    midsX   :", len(midsX))
-            print("    midsOffY:", len(midsOffY))
-            print("    midsOffZ:", len(midsOffZ))
-            # print("lengthsList,angleList: ", len(lengthsList), len(anglesList))
-
-            timer.startTime()
-            voxel = genLightFieldVoxels(workingBox, ulenses, camPix,
-                                        midsX, midsOffY, midsOffZ,
-                                        lengthsList,
-                                        angles)
-            timer.endTime("        genLightFieldVoxels")
-            # Create LightFieldVoxelRaySpace
-            # voxel = generateLightFieldVoxelRaySpace(
-            #     ulenses,
-            #     LFRayTraceVoxParams.uLensPitch,
-            #     voxPitch,
-            #     entrance, exits,
-            #     workingBox)
-            # save to disk ============================================
-            parameters, imagepath, lfvoxpath = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
-            saveLightFieldVoxelRaySpace(lfvoxpath + "lfvox_" + parameters, voxel)
-                # LightFieldVoxelRaySpace voxel files are saved in the directory corresponding to its parameters
-            print('    Saved LightFieldVoxelRaySpace to: ', parameters)
-            # TODO Diagnostic
-            # showRaysInVoxels(voxel)
-            del voxel
+            generateLFRTvoxels(ulenses, voxPitch)
 
     print("All done Generating LFRTVoxels.")

@@ -1,0 +1,3 @@
+The bundle data for Bundle1 were calculated with voxPitch=26/15 µm, a bundle radius of 1.5*voxPitch, and a length of 30*voxPitch.
+
+In the JPEG file, the X-, Y-, and Z- axes are indicated and the black point in one corner identifies the origin of the coordinate system. 

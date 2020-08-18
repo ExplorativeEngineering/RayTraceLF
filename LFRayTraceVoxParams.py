@@ -9,11 +9,10 @@ import numpy as np
 # Make uLensPitch/voxPitch an odd integer
 # possible values for voxPitch: 3, 1, 1/3, 1/5 of 26/15 (uLensPitch)
 #voxPitches = [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
-voxPitches = [(26 / 15)]
+voxPitches = [(26 / 15), (26 / 15) / 3,   (26 / 15) / 5]
 # ulenseses a list of # of uLenses
-# ulenseses = [8, 16, 32, 64, 115]
-# ulenseses = [9, 25, 49, 81, 115]
-ulenseses = [65]
+# ulenseses = [9, 15, 33, 65, 115]
+ulenseses = [9]
 
 # ===================================
 displace = [0, 0, 0]
@@ -24,7 +23,7 @@ workingSpaceX = 100  # 100 microns
 # workingSpaceYZ is a function of the number of uLenses
 
 # Optical System Parameters ==============================================================
-magnObj = 60  # magnification of objective lens
+magnObj = 60        # magnification of objective lens
 nMedium = 1.33      # refractive index of object medium
 naObj = 1.2         # NA of objective lens; for naObj=1.2 (water imm. objective), the tilt angle of ray passing
                     # through edge of aperture is arcSin(1.2/1.33)=64°
@@ -39,13 +38,14 @@ uLensCtr = [8.,8.]  # the µLens center is at the pixel border between 8th and 9
 
 camPixPitch = 6.5   # size of camera pixels in micron
                     # Sensor Pixels = 2048 x 2048 ... (2048 * 6.5 um) / 100 um    133.12
+
 # uLensPitch - µLens pitch in object space.  100 um diameter ulens.
 #   uLens pitch = 1.7333.. or (26/15) microns in object space when using 60x objective lens.
 #   uLensPitch = (16 pix * 6.5 micron= pix=104 micron/ulens) / 60 = 1.73... microns/ulens in obj space
 uLensPitch = nrCamPix * camPixPitch / magnObj
 print("uLensPitch:", uLensPitch)
 
-
+# camPixRays ===============================================================================================
 # camPixRays generates a square list that holds values (in radian) for azimuth and tilt angles
 # in object space for rays originating in camera pixels [i,j] behind a single lenslet
 # The computation implements the sine condition for points in the back focal plane of the objective lens
@@ -77,68 +77,8 @@ def getAngles():
     angles=camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA)
     return angles
 
-# ===================================================================
-# Data Types, Ranges (for encoding)
-# TODO what is maximum accumulated intensity?
-# depends on output image depth
-# data type of the resulting LF Image
-intensity_multiplier = 1000
-length_div = 6000
-# lengths as high as 7.9....
-# TODO div. length by voxPitch, then sqrt(3) into 64000
-#max_length = round(math.sqrt(obj_voxNrX * obj_voxNrX + obj_voxNrYZ * obj_voxNrYZ + obj_voxNrYZ * obj_voxNrYZ))
-#print("max_length:", max_length)
-
-# For multiprocessing...======================================================
-# LFImage is read/write shared array, ushort
-# LFImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
-#
-# # voxels is read-only shared array of rays
-# # voxels[x,y,z][nRays]
-# multiprocessing.RawArray()
-# voxel = np.empty([obj_voxNrX, obj_voxNrYZ, obj_voxNrYZ], dtype='object')
-#
-# camPix = []
-# anglesList = multiprocessing.Array('d',100)
-
-
-#============================================================================================
-#parameters, path, lfvox_filename = file_strings(ulenses, voxPitch)
-imagedir = "lfimages"
-lfvoxdir = "lfrtvox"
-
-def file_strings(ulenses, voxPitch):
-    # for naming of output files
-    parameters = str(ulenses) + '_' + "{:3.3f}".format(voxPitch).replace('.', '_')
-    # print('parameters: ', parameters)
-    #  Images with different parameters are saved to separate directories
-    # path = "lfimages/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
-    imagepath = imagedir + "/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
-    lfvoxpath = lfvoxdir + "/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
-    # print('data file path: ', path)
-    # create directory for outputs with this set of parameters
-    Path(imagepath).mkdir(parents=True, exist_ok=True)
-    Path(lfvoxpath).mkdir(parents=True, exist_ok=True)
-    #lfvox_filename = "lfvox/lfvox_" + parameters
-    return parameters, imagepath, lfvoxpath
-
-def formatList(l):
-    return "["+", ".join(["%.3f" % x for x in l])+"]"
-
-# ===============================================================================================
-# UTILS
-
-def getNumProcs():
-    try:
-        numProcessors = multiprocessing.cpu_count()
-        # print('CPU count:', numProcessors)
-    except NotImplementedError:   # win32 environment variable NUMBER_OF_PROCESSORS not defined
-        print('Cannot detect number of CPUs')
-        numProcessors = 1
-    return numProcessors
-
 # ====================================================================================================
-# Angles in x,y,z components, unit vectors, list of 164 sets of them
+# TODO # Angles in x,y,z components, unit vectors, list of 188 sets of them
 def calcUnitVectorAngles(x1, y1, z1, x2, y2, z2):
     dx = float(x2 - x1)
     dy = float(y2 - y1)
@@ -157,6 +97,67 @@ def genRayAngles(entrance_, exit_):
         unitVector = calcUnitVectorAngles(x1, y1, z1, x2, y2, z2)
         anglesList.append(unitVector)
     return anglesList
+
+# ====================================================================================================
+# Data Types, Ranges (for encoding)
+# TODO what is maximum accumulated intensity?
+# depends on output image depth
+# data type of the resulting LF Image
+intensity_multiplier = 1000
+length_div = 6000
+# lengths as high as 7.9....
+# TODO div. length by voxPitch, then sqrt(3) into 64000
+#max_length = round(math.sqrt(obj_voxNrX * obj_voxNrX + obj_voxNrYZ * obj_voxNrYZ + obj_voxNrYZ * obj_voxNrYZ))
+#print("max_length:", max_length)
+
+# For multiprocessing...================================================================================
+# LFImage is read/write shared array, ushort
+# LFImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
+#
+# # voxels is read-only shared array of rays
+# # voxels[x,y,z][nRays]
+# multiprocessing.RawArray()
+# voxel = np.empty([obj_voxNrX, obj_voxNrYZ, obj_voxNrYZ], dtype='object')
+#
+# camPix = []
+# anglesList = multiprocessing.Array('d',100)
+
+
+#============================================================================================
+# For naming directories and files...
+# parameters, imagepath, lfvoxpath = file_strings(ulenses, voxPitch)
+imagedir = "lfimages"
+lfvoxdir = "lfrtvox"
+
+def file_strings(ulenses, voxPitch):
+    # for naming of output files
+    parameters = str(ulenses) + '_' + "{:3.3f}".format(voxPitch).replace('.', '_')
+    # print('parameters: ', parameters)
+    #  Images with different parameters are saved to separate directories
+    imagepath = imagedir + "/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
+    lfvoxpath = lfvoxdir + "/" + str(ulenses) + '/' + "{:3.3f}".format(voxPitch).replace('.', '_') + '/'
+    # print('data file path: ', path)
+    # create directory for outputs with this set of parameters
+    Path(imagepath).mkdir(parents=True, exist_ok=True)
+    Path(lfvoxpath).mkdir(parents=True, exist_ok=True)
+    #lfvox_filename = "lfvox/lfvox_" + parameters
+    return parameters, imagepath, lfvoxpath
+
+# ===============================================================================================
+# UTILS
+
+def formatList(l):
+    return "["+", ".join(["%.3f" % x for x in l])+"]"
+
+def getNumProcs():
+    try:
+        numProcessors = multiprocessing.cpu_count()
+        # print('CPU count:', numProcessors)
+    except NotImplementedError:   # win32 environment variable NUMBER_OF_PROCESSORS not defined
+        print('Cannot detect number of CPUs')
+        numProcessors = 1
+    return numProcessors
+
 
 if __name__ == "__main__":
     print("Nothing to do... "

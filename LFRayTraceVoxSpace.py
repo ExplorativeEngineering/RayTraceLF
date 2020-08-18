@@ -3,8 +3,6 @@
 import LFRayTraceVoxParams
 from LFRayTraceVoxParams import formatList
 
-
-
 def getVoxelDims(extentOfSpaceX, extentOfSpaceYZ, voxPitch):
     # Voxel dimensions, extent...
     # voxPitch is the side length in micron of a cubic voxel in object space
@@ -53,7 +51,7 @@ def getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace):
     return voxBox
 
 def getWorkingDims(voxCtr, ulenses, voxPitch):
-    # TODO not voxPitch, lenPitch
+    # TODO not voxPitch, lensPitch
     workingSpaceYZ = ulenses * voxPitch # microns; YZ size a function of the # of uLens
     workingBoxDim = [LFRayTraceVoxParams.workingSpaceX, workingSpaceYZ, workingSpaceYZ]
     workingBox = getWorkingBox(voxCtr, workingBoxDim, voxPitch, LFRayTraceVoxParams.displace)
@@ -77,6 +75,8 @@ if __name__ == "__main__":
     workingBoxDim = [LFRayTraceVoxParams.workingSpaceX, workingSpaceYZ, workingSpaceYZ]
     workingBox = getWorkingDims(voxCtr, ulenses, voxPitch)
     print("    workingBox:", workingBox)
+
+
 
     """
     OLD...
