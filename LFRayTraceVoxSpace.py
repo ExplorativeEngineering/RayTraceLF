@@ -52,7 +52,8 @@ def getWorkingBox(voxCtr, workingBoxDim, voxPitch, displace):
 
 def getWorkingDims(voxCtr, ulenses, voxPitch):
     # TODO not voxPitch, lensPitch
-    workingSpaceYZ = ulenses * voxPitch # microns; YZ size a function of the # of uLens
+
+    workingSpaceYZ = ulenses * LFRayTraceVoxParams.uLensPitch  # microns; YZ size a function of the # of uLens
     workingBoxDim = [LFRayTraceVoxParams.workingSpaceX, workingSpaceYZ, workingSpaceYZ]
     workingBox = getWorkingBox(voxCtr, workingBoxDim, voxPitch, LFRayTraceVoxParams.displace)
     print("     Working space:", workingBox, "  size: ",
