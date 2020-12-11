@@ -1,61 +1,52 @@
-
-Description of algorithm ---
-
-- schematic of process and objects
-
-Changes Aug 18
-
-    LFRayTraceVoxProjection runs projections on all the files in the samples/ folder
-
-    LFRayTraceVoxGenerate.__main__
-        iteratively calls generateLFRTvoxels(ulenses, voxPitch)
-
-    LFRayTraceVoxProjection.__main__
-        iteratively calls projectSamples(ulenses, voxPitch)
-
-
-Anisotropic Projections
-
-Inputting Sample Objects for LFProjection
-
-
-Organization of Light Field Ray Trace Projector Code
+Organization of Light Field Ray Trace Python Code
 ----------------------------------------------------
-
-Assuming... optical configuration with uLenPitch of 26/15
-
-To Use:
-    1) Change the parameters in LFRayTraceVoxParams:
-            voxPitch (resolution) and # of uLenses
-    2) Run LFRayTraceVoxGenerate
-        This generates the LFRayTraceVoxel model for each of the parameters.
-    3) In LFRayTraceVoxProjection.py, set the samples to be projected.
-
-    4) Run LFRayTraceVoxProjection
-        This creates LF images for all the sample
-
-Python code  files:
-
     LFRayTraceVoxParams.py
-        Set the Input parameters for both generating (run LFRayTraceVoxGenerate) and
+        Holds the Input parameters for both generating (run LFRayTraceVoxGenerate) and
         projecting (run LFRayTraceVoxProjection):
-            Resolution, voxPitch
-            # of uLenses
-    LFRayTraceVoxGenerate.py
-        Generates a mapping of the rays passing through all the voxels in the working space to the sensor plane.
-
-    LFRayTraceVoxProjection.py
-        Creates the light field image by projecting all rays from the sample voxels.
+            voxPitch and # of uLenses
+        also creates angles, camPix, Entrance and Exit coordinates arrays.
 
     LFRayTraceVoxSpace.py
-        Calculates coordinates, transforms
+        Calculates spatial coordinates and dimensions
 
     siddon2.py
         The Siddon algorithm.
 
-    camRayEntrance.py
-        Reads camRayEntrance.txt to create camPix and Entrance coord arrays.
-        Calculates Exit coordinates array.
+    LFRayTraceVoxGenerate.py
+        Generates LFRTvox, a mapping of the rays passing through all the voxels in
+        the working space to the sensor plane.
+        Saves this array to a file (see Directories for data output below.)
+
+    LFRayTraceVoxProjection.py
+        The samples to be projected are specified, IT can run projections on all the
+        files in the samples/ folder.
+        It creates the light field image by projecting all rays from the sample voxels.
+        From the light field image it then generates a 16x16 array of perspective images.
+        (see Directories for data output below.)
+
+    (Currently, for testing...
+    voxPitches is a list of voxPitch values, e.g. [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
+    ulenseses a list of # of uLenses, e.g. [9, 15, 33, 65, 115]
+    LFRayTraceVoxGenerate.__main__
+        iteratively calls generateLFRTvoxels(ulenses, voxPitch)
+    LFRayTraceVoxProjection.__main__
+        iteratively calls projectSamples(ulenses, voxPitch)
+    )
+
+-- Directories for data output:
+    Data is written to separate directories, depending on the ulenses and voxPitch parameters
+    with this pattern:
+
+    - LFRTVoxel files are saved as:
+        lfrtvox/[uLenses]/[voxPitch]/lfvox_[uLenses]_[voxPitch].npy
+        (e.g. lfrtvox/24/0_578/lfvox_24_0_578.npy)
+
+    - Light field images are saved as:
+        lfimages/[uLenses]/[voxPitch]/[name]_[parms].plm.tiff
+        (e.g. lfimages/24/0_578/Tripod_1B_[0, 0, 0].plm.tiff)
+
+    - Perspective images, the same directory as lightfield images, with [name]_[parms].plm.psv.tiff
+        (e.g. (e.g. lfimages/24/0_578/Tripod_1B_[0, 0, 0].plm.psv.tiff)
 
     samples.py
         Creates test samples
@@ -63,11 +54,10 @@ Python code  files:
             Lines in the x, y and z directions, a diagonal line, and a block,
             all with the value = 1 in the occupied voxels.
             These object can be displaced within the object space by changing
-                offsets = [0, 20, 20]
-            in the runProjection function.
-Input Data:
-    samples/ directory
-        contains sample objects in .txt formats (from Mathematica)
+                offsets = [x, y, z]  in the runProjection function.
+
+Sample Input Data in samples/ directory
+        Imports sample objects in .txt formats (from Mathematica)
         Test Samples include:
         cylindrical objects (bundles) that have all a cylinder diameter of 6 voxPitch and a length of 30 µLensPitch.
         The first bundle (bundle1_0_0.txt) is oriented parallel to the Y-axis, hence perpendicular to the optical axis.
@@ -75,6 +65,8 @@ Input Data:
         The third bundle (bundle3_0_90.txt) is parallel to the X-axis.
         The bundles are all rasterized with a voxelPitch of 0.865µm.
 
+
+==============================================================================================
 Notes:
 
 -- Orientation of Axes, Coordinated
@@ -87,31 +79,16 @@ Notes:
 -- Display LF Image  with gamma <> 1
     You can specify gamma when matplotlib images are plotted to show low vales.
 
--- Directories for data output:
-    Data is written to separate directories, depending on the ulenses and voxPitch parameters
-    with this pattern:  lfimages/[uLenses]/[voxPitch] (e.g. lfimages/24/0_578)
-
-        - LFRTVoxel files are named lfvox_ (e.g. lfvox_24_0_578.npy)
-	    - Light field images (_.plm.tiff) and are named like this: [name]_[parms].plm.tiff
-        - Perspective images... [name]_[parms].plm.psv.tiff
 
 Perspective Images
 	Generates (uLenses x uLenses) array of (16 x 16) perspective images
 	helpful for validation, seeing geometry of sample.
 
-LightFieldRayTraceVolume (LFRTV)
-    Saving and Loading LFRTVs
-    Once a static LightFieldRayTraceVolume calculated, (with a given set of parameters) it can be saved to disk
-    and then loaded to run a set of tests/learning processes.
 
 Next steps
---------------
-
-
+--------------------------------------------------------
 Compute largest space, highest resolution map
-
 	110 uLenses
-
 
 Testing and Validation of results, geometry, etc.
 If many occupied voxels, accum intensity goes nuts...
@@ -121,12 +98,10 @@ Image Data Management
     Add Metadata in tiff file
 
 
-ImageNavigator
+ImageNavigator Ideas...
 
     Handle .plm files
 
     Pairs of lenslet and perspective images. Same name_parms
         name_parms.plm.tiff
         name_parms.plm.psv.tiff
-
-

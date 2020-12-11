@@ -3,7 +3,7 @@ import copy
 #from sparse import COO
 
 from utils import sizeOf
-from oldcamray.camRayEntrance import camRayEntrance
+from old.oldcamray.camRayEntrance import camRayEntrance
 import matplotlib.pyplot as plt
 import numpy as np
 import time

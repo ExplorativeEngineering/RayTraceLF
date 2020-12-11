@@ -2,7 +2,7 @@ import copy
 import struct
 #from sparse import COO
 import samples
-from oldcamray.camRayEntrance import camRayEntrance
+from old.oldcamray.camRayEntrance import camRayEntrance
 import matplotlib.pyplot as plt
 import numpy as np
 from utils import timer
@@ -594,21 +594,21 @@ if __name__ == "__main__":
     lfvox_filename = "lfvox/lfvox_" + parameters
     if createVoxels:
         # Create and save ==============================================
-        voxel = generateLightFieldVoxelRaySpace(obj_voxNrX, obj_voxNrYZ, ex_obj_offsets,
-                                               ulenses, uLensPitch, voxPitch, entrance, exits, ex_voxBox)
+        lfrtVoxels = generateLightFieldVoxelRaySpace(obj_voxNrX, obj_voxNrYZ, ex_obj_offsets,
+                                                     ulenses, uLensPitch, voxPitch, entrance, exits, ex_voxBox)
     if saveVoxels:
         # save to disk ============================================
-        saveLightFieldVoxelRaySpace(lfvox_filename, voxel)
+        saveLightFieldVoxelRaySpace(lfvox_filename, lfrtVoxels)
     if readVoxels:
         # Read from disk ==========================================
-        voxel = loadLightFieldVoxelRaySpace(lfvox_filename)
+        lfrtVoxels = loadLightFieldVoxelRaySpace(lfvox_filename)
     print ("LFVox file: "  + lfvox_filename)
     del entrance
     del exits
 
     if doProjections:
         print("Image Size: ", 16 * ulenses, 16 * ulenses)
-        runProjection(obj_voxNrX, obj_voxNrYZ, ulenses, camPix, anglesList, voxel, path)
+        runProjection(obj_voxNrX, obj_voxNrYZ, ulenses, camPix, anglesList, lfrtVoxels, path)
 
     print("All done.")
     #sys.exit(0)

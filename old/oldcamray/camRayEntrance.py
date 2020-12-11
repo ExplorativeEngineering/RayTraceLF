@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import LFRayTraceVoxParams
 from LFRayTraceVoxSpace import getVoxelDims
-from oldcamray.camRayEntranceRO import camRayCoord
+from old.oldcamray.camRayEntranceRO import camRayCoord
 
 """
 July 30 or so...

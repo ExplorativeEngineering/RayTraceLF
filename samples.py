@@ -96,8 +96,8 @@ def sample_diag(size):
     np.fill_diagonal(array, 1)
     return array
 
-def sample_block(size):
-    array = np.ones((size, size, size))
+def sample_block(sizeX, sizeYZ):
+    array = np.ones((sizeX, sizeYZ, sizeYZ))
     return array
 
 

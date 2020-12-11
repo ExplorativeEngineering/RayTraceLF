@@ -3,10 +3,7 @@ import math
 import struct
 import matplotlib.pyplot as plt
 import numpy as np
-
-
 import LFRayTraceVoxParams
-
 from LFRayTraceVoxSpace import getVoxelDims, getWorkingDims
 # TODO
 #from camRayEntrance import camRayEntrance
@@ -157,6 +154,7 @@ def genLightFieldVoxels(workingBox, ulenses, camPix, midsX, midsOffY, midsOffZ, 
     # TODO parallelization... uLenses / numProcs
     def process_for_k(chunk_):
         # sub-process for each k
+
         for k in chunk_:
             for j in range(ulenses):
                 nZ = k
@@ -275,8 +273,8 @@ def generateLFRTvoxels(ulenses, voxPitch):
     print("   EX space specified: (", LFRayTraceVoxParams.entranceExitX, LFRayTraceVoxParams.entranceExitYZ, "microns )")
     print("   EX space, voxCtr:", LFRayTraceVoxParams.formatList(voxCtr),
           "  size: ", voxNrX, voxNrYZ, voxNrYZ)
-    # camPix, entrance, exits, angles = camRayCoord(voxCtr)  # 164 (x,y), (x, y, z) (x, y, z)
-    # # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
+    # camPix, entrance, exits, angles = camRayCoord(voxCtr)  # 188 (x,y), (x, y, z) (x, y, z)
+    # print("lengths of camPix, entrance, exit: ", len(camPix), len(entrance), len(exits))
     # anglesList = LFRayTraceVoxParams.genRayAngles(entrance, exits) # ????
     angles = LFRayTraceVoxParams.getAngles()
     camPix, rayEntrFace, rayExitFace = LFRayTraceVoxParams.camRayCoord(voxCtr, angles)
@@ -297,9 +295,7 @@ def generateLFRTvoxels(ulenses, voxPitch):
     # print("lengthsList,angleList: ", len(lengthsList), len(anglesList))
     timer.startTime()
     voxel = genLightFieldVoxels(workingBox, ulenses, camPix,
-                                midsX, midsOffY, midsOffZ,
-                                lengthsList,
-                                angles)
+                                midsX, midsOffY, midsOffZ, lengthsList, angles)
     timer.endTime("        genLightFieldVoxels")
     # save to disk ============================================
     parameters, imagepath, lfvoxpath = LFRayTraceVoxParams.file_strings(ulenses, voxPitch)
@@ -315,7 +311,7 @@ def main():
 
 # globals
 
-voxel = None
+lfrtVoxels = None
 # midsX, midsOffY, midsOffZ
 
 if __name__ == "__main__":

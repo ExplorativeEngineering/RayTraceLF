@@ -1,4 +1,4 @@
-from oldcamray.camRayEntrance import camRayEntrance
+from old.oldcamray.camRayEntrance import camRayEntrance
 import numpy as np
 
 # magnification of objective lens

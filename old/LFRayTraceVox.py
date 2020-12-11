@@ -2,7 +2,7 @@ import copy
 import numba
 #from sparse import COO
 
-from oldcamray.camRayEntrance import camRayEntrance
+from old.oldcamray.camRayEntrance import camRayEntrance
 import matplotlib.pyplot as plt
 import numpy as np
 import time

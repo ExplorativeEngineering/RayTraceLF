@@ -9,10 +9,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import time
 import numpy as np
-from videofig.videofig import videofig
+from stuff.videofig.videofig import videofig
 
 NUM_IMAGES = 10
 PLAY_FPS = 1  # set a large FPS (e.g. 100) to test the fastest speed our script can achieve

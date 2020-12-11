@@ -6,7 +6,7 @@ import struct
 from past.builtins import xrange
 
 import samples
-from oldcamray.camRayEntrance import camRayEntrance
+from old.oldcamray.camRayEntrance import camRayEntrance
 import matplotlib.pyplot as plt
 import numpy as np
 from utils import timer
@@ -247,13 +247,13 @@ def genLightFieldVoxels(voxNrX_, voxNrYZ_, ex_obj_offsets_, ulenses, camPix, mid
                         if 0 <= x < voxNrX_ and \
                                 0 <= y < voxNrYZ_ and \
                                 0 <= z < voxNrYZ_:
-                            if voxel[x][y][z] is None:
+                            if lfrtVoxels[x][y][z] is None:
                                 # voxel[x][y][z] =  [[nRay, nZ, nY, lengthsList[nRay][midpt]]]
-                                voxel[x][y][z] = [struct.pack('BbbB', nRay, nZ, nY, int(lengthsList[nRay][midpt] * 48))]
+                                lfrtVoxels[x][y][z] = [struct.pack('BbbB', nRay, nZ, nY, int(lengthsList[nRay][midpt] * 48))]
 
                             else:
                                 packedRay = struct.pack('BbbB', nRay, nZ, nY, int(lengthsList[nRay][midpt] * 48))
-                                voxel[x][y][z].append(packedRay)
+                                lfrtVoxels[x][y][z].append(packedRay)
 
 
     # def chunks(l, n):
@@ -266,7 +266,7 @@ def genLightFieldVoxels(voxNrX_, voxNrYZ_, ex_obj_offsets_, ulenses, camPix, mid
         process_for_k(chunk)
 
     #print("number_of_rays:", number_of_rays)
-    return voxel
+    return lfrtVoxels
 
 def generateLightFieldVoxelRaySpace(voxNrX_, voxNrYZ_, ex_obj_offsets_,  ulenses_, uLensPitch_, voxPitch_, entrance_, exits_, EXBox_):
     # Rays - Generate midpoints and lengths for the 164 rays... These are in micron, physical dimensions
@@ -412,7 +412,7 @@ def genLightFieldImageMultiProcess(ulenses, camPix, anglesList, sampleArray):
     def processChunk(chunk):
         for n in range(len(chunk)):
             value = sampleArray[chunk[n][0], chunk[n][1], chunk[n][2]]
-            rays = voxel[chunk[n][0], chunk[n][1], chunk[n][2]]
+            rays = lfrtVoxels[chunk[n][0], chunk[n][1], chunk[n][2]]
             if rays is None:
                 pass
                 # print("rays = None in voxel: ", [nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n]])
@@ -670,7 +670,7 @@ print()
 # # voxels is read-only shared array of rays
 # # voxels[x,y,z][nRays]
 # multiprocessing.RawArray()
-voxel = np.empty([obj_voxNrX, obj_voxNrYZ, obj_voxNrYZ], dtype='object')
+lfrtVoxels = np.empty([obj_voxNrX, obj_voxNrYZ, obj_voxNrYZ], dtype='object')
 
 #
 # camPix = []
@@ -686,14 +686,14 @@ if __name__ == "__main__":
     lfvox_filename = "lfvox/lfvox_" + parameters
     if createVoxels:
         # Create and save ==============================================
-        voxel = generateLightFieldVoxelRaySpace(obj_voxNrX, obj_voxNrYZ, ex_obj_offsets,
-                                               ulenses, uLensPitch, voxPitch, entrance, exits, ex_voxBox)
+        lfrtVoxels = generateLightFieldVoxelRaySpace(obj_voxNrX, obj_voxNrYZ, ex_obj_offsets,
+                                                     ulenses, uLensPitch, voxPitch, entrance, exits, ex_voxBox)
     if saveVoxels:
         # save to disk ============================================
-        saveLightFieldVoxelRaySpace(lfvox_filename, voxel)
+        saveLightFieldVoxelRaySpace(lfvox_filename, lfrtVoxels)
     if readVoxels:
         # Read from disk ==========================================
-        voxel = loadLightFieldVoxelRaySpace(lfvox_filename)
+        lfrtVoxels = loadLightFieldVoxelRaySpace(lfvox_filename)
     print ("LFVox file: "  + lfvox_filename)
     del entrance
     del exits
@@ -702,7 +702,7 @@ if __name__ == "__main__":
 
     if doProjections:
         print("Image Size: ", 16 * ulenses, 16 * ulenses)
-        runProjection(obj_voxNrX, obj_voxNrYZ, ulenses, camPix, anglesList, voxel, path)
+        runProjection(obj_voxNrX, obj_voxNrYZ, ulenses, camPix, anglesList, lfrtVoxels, path)
 
     print("All done.")
     #sys.exit(0)

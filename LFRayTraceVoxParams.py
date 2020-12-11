@@ -2,17 +2,20 @@ import multiprocessing
 import math
 from pathlib import Path
 import numpy as np
+import psutil
 
 # ==== INPUTS ==================================================
 # voxPitch is the side length in microns of a cubic voxel in object space;
 # and of a square cell of the entrance and exit face, it determines digital voxel resolution
 # Make uLensPitch/voxPitch an odd integer
 # possible values for voxPitch: 3, 1, 1/3, 1/5 of 26/15 (uLensPitch)
+
 #voxPitches = [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
-voxPitches = [(26 / 15), (26 / 15) / 3,   (26 / 15) / 5]
+
+voxPitches = [(26 / 15)]
 # ulenseses a list of # of uLenses
 # ulenseses = [9, 15, 33, 65, 115]
-ulenseses = [9]
+ulenseses = [65]
 
 # ===================================
 displace = [0, 0, 0]
@@ -43,15 +46,15 @@ camPixPitch = 6.5   # size of camera pixels in micron
 #   uLens pitch = 1.7333.. or (26/15) microns in object space when using 60x objective lens.
 #   uLensPitch = (16 pix * 6.5 micron= pix=104 micron/ulens) / 60 = 1.73... microns/ulens in obj space
 uLensPitch = nrCamPix * camPixPitch / magnObj
-print("uLensPitch:", uLensPitch)
 
 # camPixRays ===============================================================================================
 # camPixRays generates a square list that holds values (in radian) for azimuth and tilt angles
 # in object space for rays originating in camera pixels [i,j] behind a single lenslet
 # The computation implements the sine condition for points in the back focal plane of the objective lens
+# 188 rays
 def camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA):
     angles=[[0.]*nrCamPix for i in range(nrCamPix)]
-    #creates a square list with nrCamPix * nrCamPix elements, each set to 0
+    # creates a square list with nrCamPix * nrCamPix elements, each set to 0
     for i in range(nrCamPix):
         for j in range(nrCamPix):
             tmp = np.sqrt((i+0.5-uLensCtr[0])**2 + (j+0.5-uLensCtr[1])**2)
@@ -100,7 +103,7 @@ def genRayAngles(entrance_, exit_):
 
 # ====================================================================================================
 # Data Types, Ranges (for encoding)
-# TODO what is maximum accumulated intensity?
+# TODO what is maximum accumulated intensity?  -- LFImage is now double...
 # depends on output image depth
 # data type of the resulting LF Image
 intensity_multiplier = 1000
@@ -109,19 +112,6 @@ length_div = 6000
 # TODO div. length by voxPitch, then sqrt(3) into 64000
 #max_length = round(math.sqrt(obj_voxNrX * obj_voxNrX + obj_voxNrYZ * obj_voxNrYZ + obj_voxNrYZ * obj_voxNrYZ))
 #print("max_length:", max_length)
-
-# For multiprocessing...================================================================================
-# LFImage is read/write shared array, ushort
-# LFImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
-#
-# # voxels is read-only shared array of rays
-# # voxels[x,y,z][nRays]
-# multiprocessing.RawArray()
-# voxel = np.empty([obj_voxNrX, obj_voxNrYZ, obj_voxNrYZ], dtype='object')
-#
-# camPix = []
-# anglesList = multiprocessing.Array('d',100)
-
 
 #============================================================================================
 # For naming directories and files...
@@ -152,13 +142,24 @@ def formatList(l):
 def getNumProcs():
     try:
         numProcessors = multiprocessing.cpu_count()
-        # print('CPU count:', numProcessors)
+        print('CPU count:', numProcessors)
     except NotImplementedError:   # win32 environment variable NUMBER_OF_PROCESSORS not defined
         print('Cannot detect number of CPUs')
         numProcessors = 1
     return numProcessors
 
 
+def getNumCores():
+    try:
+        numCores = psutil.cpu_count(logical=False)
+        print('Core count:', numCores)
+    except NotImplementedError:   # win32 environment variable NUMBER_OF_PROCESSORS not defined
+        print('Cannot detect number of Cores')
+        numCores = 1
+    return numCores
+
 if __name__ == "__main__":
     print("Nothing to do... "
           "Run generator or projector.")
+    getNumProcs()
+    getNumCores()
