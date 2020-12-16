@@ -277,6 +277,7 @@ def projectArray(array, name, offsets, path):
             array.shape[2] + offsets[2] > workingDimYZ:
         print("    * * * Sample [" + name + "] does not fit in object space. Sample shape: " + str(array.shape))
         return
+
     print("-----------------------------------------------")
     print("        Projecting: ", name, "     offset:", offsets)
     sampleArray = placeInWorkingSpace(array, [workingDimX, workingDimYZ, workingDimYZ], offsets)

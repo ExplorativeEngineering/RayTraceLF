@@ -18,19 +18,22 @@ Organization of Light Field Ray Trace Python Code
         Saves this array to a file (see Directories for data output below.)
 
     LFRayTraceVoxProjection.py
-        The samples to be projected are specified, IT can run projections on all the
+        The samples to be projected are specified, or it can run projections on all the
         files in the samples/ folder.
         It creates the light field image by projecting all rays from the sample voxels.
         From the light field image it then generates a 16x16 array of perspective images.
         (see Directories for data output below.)
 
     (Currently, for testing...
-    voxPitches is a list of voxPitch values, e.g. [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
-    ulenseses a list of # of uLenses, e.g. [9, 15, 33, 65, 115]
-    LFRayTraceVoxGenerate.__main__
-        iteratively calls generateLFRTvoxels(ulenses, voxPitch)
-    LFRayTraceVoxProjection.__main__
-        iteratively calls projectSamples(ulenses, voxPitch)
+        voxPitches is a list of voxPitch values, e.g. [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
+            or [5.2, 1.73, 0.57, 0.346]
+
+        ulenseses a list of # of uLenses, e.g. [9, 15, 33, 65, 115]
+
+        LFRayTraceVoxGenerate.__main__
+            iteratively calls generateLFRTvoxels(ulenses, voxPitch)
+        LFRayTraceVoxProjection.__main__
+            iteratively calls projectSamples(ulenses, voxPitch)
     )
 
 -- Directories for data output:

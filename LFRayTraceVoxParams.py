@@ -50,16 +50,18 @@ uLensPitch = nrCamPix * camPixPitch / magnObj
 # camPixRays ===============================================================================================
 # camPixRays generates a square list that holds values (in radian) for azimuth and tilt angles
 # in object space for rays originating in camera pixels [i,j] behind a single lenslet
-# The computation implements the sine condition for points in the back focal plane of the objective lens
+# The computation implements the sine condition for points in the back focal plane of the objective lens.
 # 188 rays
-def camPixRays(nrCamPix,uLensCtr,nMedium,naObj,rNA):
-    angles=[[0.]*nrCamPix for i in range(nrCamPix)]
-    # creates a square list with nrCamPix * nrCamPix elements, each set to 0
+
+def camPixRays(nrCamPix, uLensCtr, nMedium, naObj, rNA):
+    # create a square list with nrCamPix * nrCamPix elements, each set to 0
+    angles = [[0.] * nrCamPix for i in range(nrCamPix)]
     for i in range(nrCamPix):
         for j in range(nrCamPix):
-            tmp = np.sqrt((i+0.5-uLensCtr[0])**2 + (j+0.5-uLensCtr[1])**2)
+            tmp = np.sqrt((i + 0.5 - uLensCtr[0]) ** 2 + (j + 0.5 - uLensCtr[1]) ** 2)
             if tmp <= rNA:
-                angles[j][i]=[np.arctan2(i+0.5-uLensCtr[0],j+0.5-uLensCtr[1]),np.arcsin(tmp/rNA*naObj/nMedium)]
+                angles[j][i] = [np.arctan2(i + 0.5 - uLensCtr[0], j + 0.5 - uLensCtr[1]),
+                                np.arcsin(tmp / rNA * naObj / nMedium)]
     return angles
 
 def camRayCoord(voxCtr,angles):
