@@ -12,10 +12,10 @@ import psutil
 
 #voxPitches = [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
 # or [5.2, 1.73, 0.57, 0.346] microns per voxel
-voxPitches = [(26 / 15)]
+voxPitches = [(26 / 15)/3]
 # ulenseses a list of # of uLenses
 # ulenseses = [9, 15, 33, 65, 115]
-ulenseses = [65]
+ulenseses = [33]
 
 # ===================================
 displace = [0, 0, 0]

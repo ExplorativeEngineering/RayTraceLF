@@ -9,6 +9,7 @@ from LFRayTraceVoxSpace import getVoxelDims, getWorkingDims
 from utils import timer, sizeOf
 import os
 import samples
+from numba import jit
 
 # Options -----------
 sampledir = "samples"
@@ -83,52 +84,53 @@ def showRaysInVoxels(voxel):
                             length = unpackedRay[3]
                         #    print(x,y,z,nRay, nZ, nY, length)
 
-
-def genLightFieldImage():
-    # without multiprocessing
-    # TODO not used
-    global ulenses
-    global camPix
-    global angles
-    global sampleArray
-    global nonZeroSamples
-    # Generate Light field image array
-    #nonzeroSample = sampleArray.nonzero()
-    # TODO Tiff file type?
-    bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
-    print('    number_of_nonzero_voxels:', len(nonZeroSamples[0]))
-    for n in range(len(nonZeroSamples[0])):
-        #print(nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n])
-        #print("value = ", sampleArray[nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n]])
-        value = sampleArray[nonZeroSamples[0][n], nonZeroSamples[1][n], nonZeroSamples[2][n]]
-        rays = lfrtVoxels[nonZeroSamples[0][n], nonZeroSamples[1][n], nonZeroSamples[2][n]]
-        number_of_rays = 0
-        if rays is None:
-            pass
-            #print("rays = None in voxel: ", [nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n]])
-        else:
-            for ray in range(len(rays)):
-                if rays[ray] is not None:
-                    #print(rays[ray])
-                    # ray = [nRay, nZ, nY, len, alt, azim]
-                    unpackedRay = struct.unpack('BBBH', rays[ray])
-                    nRay = unpackedRay[0]
-                    nZ = unpackedRay[1]
-                    nY = unpackedRay[2]
-                    length = unpackedRay[3]
-                    intensity = value * length / LFRayTraceVoxParams.length_div * \
-                                LFRayTraceVoxParams.intensity_multiplier
-                    # TODO angles... anglesList[nRay]... unit vectors...
-                    # nRay indexes to angles
-                    # map ray to pixel in lenslet(nY, nZ)
-                    imgXoff = int(nZ * 16 + camPix[nRay][0] - 1)
-                    imgYoff = int(nY * 16 + camPix[nRay][1] - 1)
-                    #print(nRay, nZ, nY, length, imgXoff, imgYoff, intensity, bigImage[imgXoff, imgYoff])
-                    # Add this contribution to the pixel value
-                    bigImage[imgXoff, imgYoff] = bigImage[imgXoff, imgYoff] + intensity
-                    number_of_rays += 1
-    print("       Number_of_rays:", number_of_rays)
-    return bigImage
+#@jit(nopython=True)
+# def genLightFieldImage():
+#     # without multiprocessing
+#     # TODO not used
+#     global ulenses
+#     global camPix
+#     global angles
+#     global sampleArray
+#     global nonZeroSamples
+#
+#     # Generate Light field image array
+#     #nonzeroSample = sampleArray.nonzero()
+#     # TODO Tiff file type?
+#     bigImage = np.zeros((16 * ulenses, 16 * ulenses), dtype='uint16')
+#     print('    number_of_nonzero_voxels:', len(nonZeroSamples[0]))
+#     for n in range(len(nonZeroSamples[0])):
+#         #print(nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n])
+#         #print("value = ", sampleArray[nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n]])
+#         value = sampleArray[nonZeroSamples[0][n], nonZeroSamples[1][n], nonZeroSamples[2][n]]
+#         rays = lfrtVoxels[nonZeroSamples[0][n], nonZeroSamples[1][n], nonZeroSamples[2][n]]
+#         number_of_rays = 0
+#         if rays is None:
+#             pass
+#             #print("rays = None in voxel: ", [nonzeroSample[0][n], nonzeroSample[1][n], nonzeroSample[2][n]])
+#         else:
+#             for ray in range(len(rays)):
+#                 if rays[ray] is not None:
+#                     #print(rays[ray])
+#                     # ray = [nRay, nZ, nY, len, alt, azim]
+#                     unpackedRay = struct.unpack('BBBH', rays[ray])
+#                     nRay = unpackedRay[0]
+#                     nZ = unpackedRay[1]
+#                     nY = unpackedRay[2]
+#                     length = unpackedRay[3]
+#                     intensity = value * length / LFRayTraceVoxParams.length_div * \
+#                                 LFRayTraceVoxParams.intensity_multiplier
+#                     # TODO angles... anglesList[nRay]... unit vectors...
+#                     # nRay indexes to angles
+#                     # map ray to pixel in lenslet(nY, nZ)
+#                     imgXoff = int(nZ * 16 + camPix[nRay][0] - 1)
+#                     imgYoff = int(nY * 16 + camPix[nRay][1] - 1)
+#                     #print(nRay, nZ, nY, length, imgXoff, imgYoff, intensity, bigImage[imgXoff, imgYoff])
+#                     # Add this contribution to the pixel value
+#                     bigImage[imgXoff, imgYoff] = bigImage[imgXoff, imgYoff] + intensity
+#                     number_of_rays += 1
+#     print("       Number_of_rays:", number_of_rays)
+#     return bigImage
 
 
 # ===============================================================================================
@@ -202,6 +204,7 @@ def genLightFieldImageMultiProcess(numProc):
     chunks = [nonZeroSamplesArrayTrans[i:i + numProc] for i in range(0, len(nonZeroSamplesArrayTrans), numProc)]
     print("          # procs:", numProc, '  # chunks:', len(chunks))
     # Create shared global LFImage
+
     LFImage_base = multiprocessing.Array(ctypes.c_double, 16 * ulenses * 16 * ulenses)
 
     # lock = multiprocessing.Lock()
@@ -220,6 +223,71 @@ def genLightFieldImageMultiProcess(numProc):
 
     LFImage = np.ctypeslib.as_array(LFImage_base.get_obj())
     LFImage = LFImage.reshape(16*ulenses, 16*ulenses)
+    # Scale float64 image values into LFImage16, uint16
+    maxvalue = np.max(LFImage)
+    # print("LFImage maxvalue: ", maxvalue)
+    maxunit16 = 65536 # for uint16
+    scale = maxunit16/maxvalue
+    LFImage = LFImage.astype(np.float64) * scale
+    LFImage16 = LFImage.astype(np.uint16)
+    return
+
+#===========================================================================================
+# Single processor version...
+
+@jit(nopython=True)
+def genLightFieldImageSingle():
+    # Generate Light field image array
+    # global nonZeroSamples
+    # #global nonZeroSamplesArrayTrans
+    # global ulenses
+    # global LFImage
+    # global LFImage16
+    # global totalRays
+    #
+    # global camPix
+    # global angles
+    # global lfrtVoxels
+
+    # global chunks
+    # Break up into chunks for multiprocessing...
+    # number_of_nonzero_voxels = np.count_nonzero(sampleArray)
+    number_of_nonzero_voxels = len(nonZeroSamples[0])
+    print('        Number_of_nonzero_voxels:', number_of_nonzero_voxels)
+    sampleVoxels = np.transpose(np.asarray(nonZeroSamples))
+
+    LFImage = np.zeros([16 * ulenses, 16 * ulenses], dtype=float)
+
+    for n in range(len(sampleVoxels)):
+        value = sampleArray[sampleVoxels[n][0], sampleVoxels[n][1], sampleVoxels[n][2]]
+        # TODO for anisotropic we will also access other scalar values for this voxel
+        # get list of rays in this voxel
+        rays = lfrtVoxels[sampleVoxels[n][0], sampleVoxels[n][1], sampleVoxels[n][2]]
+        # print()
+        if rays is None:
+            pass
+            # print("rays = None in voxel: ", [chundk[n][0], chunk[n][1], chunk[n][2]])
+        else:
+            # totalRays += len(rays)
+            for ray in range(len(rays)):
+                if rays[ray] is not None:
+                    unpackedRay = struct.unpack('BBBH', rays[ray])
+                    nRay = unpackedRay[0]
+                    nZ = unpackedRay[1]
+                    nY = unpackedRay[2]
+                    length = unpackedRay[3]
+                    # intensity = value * length / LFRayTraceVoxParams.length_div * \
+                    #             LFRayTraceVoxParams.intensity_multiplier
+                    intensity = value * length
+                    # TODO add anisotropic effects based on angles[nRay]  (unit vectors, nRay indexes to angles)
+                    # map ray to pixel in lenslet(nY, nZ)
+                    imgXoff = int(nZ * 16 + camPix[nRay][0])
+                    imgYoff = int(nY * 16 + camPix[nRay][1])
+                    # print("imgXoff, imgYoff, nRay, nZ, nY, length, intensity: ",
+                    #      imgXoff, imgYoff, nRay, nZ, nY, length, intensity)
+                    # Add this contribution to the pixel value in LFImage
+                    LFImage[imgXoff, imgYoff] = LFImage[imgXoff, imgYoff] + intensity
+
     # Scale float64 image values into LFImage16, uint16
     maxvalue = np.max(LFImage)
     # print("LFImage maxvalue: ", maxvalue)
@@ -272,6 +340,7 @@ def projectArray(array, name, offsets, path):
     # for test arrays
     workingDimX = workingBox[0][1] - workingBox[0][0]
     workingDimYZ = workingBox[1][1] - workingBox[1][0]
+    # Test if Sample will fit in Working Space
     if array.shape[0] + offsets[0] > workingDimX or \
             array.shape[1] + offsets[1] > workingDimYZ or \
             array.shape[2] + offsets[2] > workingDimYZ:
@@ -287,8 +356,10 @@ def projectArray(array, name, offsets, path):
     timer.startTime()
     genLightFieldImageMultiProcess(numProc)
     timer.endTime("        genLightFieldImageMultiProcess of" + name)
+    #genLightFieldImageSingle()
+    #timer.endTime("        genLightFieldImageSingle of" + name)
     print(" ")
-    # genLightFieldImage()
+
 
     if display_plot:
         plt.figure("LFImage:" + name)
@@ -405,6 +476,8 @@ def runProjections(path):
     # projectSample('Bundle1_azim0_incl0', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     # projectSample('Bundle2_azim0_incl90', offsets, workingDimX, workingDimYZ, ulenses, camPix, angleList, path)
     projectSample('Tripod_1B', offsets, path)
+    projectSample('CoboidVesicle_', offsets, path)
+
 
 # ======================================================================================
 # Main...

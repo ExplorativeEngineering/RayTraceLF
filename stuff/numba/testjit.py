@@ -6,6 +6,29 @@ trials = 30
 N = 200
 
 @jit(nopython=True)
+def SetXc(x):
+    for j in range(N):
+        for k in range(N):
+            for l in range(N):
+                x[j, k, l] = j + k + l
+    return x
+tic = time.time()
+for trial in range(trials):
+    y = SetXc(x)
+toc = time.time()
+print("Time Spent using loops .. with Numba JIT, with 1 compilation: with Global array")
+t = toc - tic
+print(t)
+print("")
+# ================================================
+# With Global array
+x = np.zeros((N, N, N))
+
+# ====================================
+# With Global array
+x = np.zeros((N, N, N))
+
+@jit(nopython=True)
 def SetXc():
     x = np.zeros((N, N, N))
     for j in range(N):
@@ -19,25 +42,6 @@ for trial in range(trials):
     y = SetXc()
 toc = time.time()
 print("Time Spent using loops .. with Numba JIT, with 1 compilation:")
-t = toc - tic
-print(t)
-print("")
-# ================================================
-# With Global array
-x = np.zeros((N, N, N))
-
-@jit(nopython=True)
-def SetXc(x):
-    for j in range(N):
-        for k in range(N):
-            for l in range(N):
-                x[j, k, l] = j + k + l
-    return x
-tic = time.time()
-for trial in range(trials):
-    y = SetXc(x)
-toc = time.time()
-print("Time Spent using loops .. with Numba JIT, with 1 compilation: with Global array")
 t = toc - tic
 print(t)
 print("")
