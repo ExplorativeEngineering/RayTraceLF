@@ -11,7 +11,7 @@ import psutil
 # possible values for voxPitch: 3, 1, 1/3, 1/5 of 26/15 (uLensPitch)
 
 #voxPitches = [(26 / 15) * 3,  (26 / 15) * 1,  (26 / 15) / 3,   (26 / 15) / 5]
-
+# or [5.2, 1.73, 0.57, 0.346] microns per voxel
 voxPitches = [(26 / 15)]
 # ulenseses a list of # of uLenses
 # ulenseses = [9, 15, 33, 65, 115]
@@ -22,6 +22,7 @@ displace = [0, 0, 0]
 # Entrance, Exit planes are 700 x 700, 250 apart (um)
 entranceExitX = 250  # microns
 entranceExitYZ = 700  # microns
+# Working Space
 workingSpaceX = 100  # 100 microns
 # workingSpaceYZ is a function of the number of uLenses
 
@@ -139,7 +140,8 @@ def file_strings(ulenses, voxPitch):
 # UTILS
 
 def formatList(l):
-    return "["+", ".join(["%.3f" % x for x in l])+"]"
+    return "[" + ", ".join(["%.3f" % x for x in l]) + "]"
+
 
 def getNumProcs():
     try:
